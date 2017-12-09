@@ -211,7 +211,8 @@ def window(iterable, size=2):
 
 def process(something):
     for w in window(something, 5):
-        print(missing_words_window(w))
+        #print(missing_words_window(w))
+        print(replaceables_window(w))
 
 ######################
 ## Going for the finals['text']
@@ -246,7 +247,7 @@ page1144_words = page1144['words']
 def missing_words_window(ws):
     print("====================")
     words = [w[1] for w in ws]
-    
+
     something_happened = False
     #
     best_s = classencoder.buildpattern(" ".join(words))
@@ -267,9 +268,62 @@ def missing_words_window(ws):
     correction['class'] = "missingword"
     correction['after'] = ws[2][0]
     correction['text'] = best_w
-    return (something_happened and best_s != ts(pattern), best_s, correction)
+    return (something_happened and best_s != " ".join(words), best_s, correction)
 
+# archaic, non-word and confusables:
+# Compare frequency of (a b c d e) with (a b X d e)
+def replaceables_window(ws):
+    print("====================")
+    words = [w[1] for w in ws]
 
+    something_happened = False
+
+    c = ws[2][1]
+
+    best_s = classencoder.buildpattern(" ".join(words))
+    best_f = fr(best_s)
+    best_w = c
+
+    for word,count in model.filter(1, size=1):
+        if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
+            a_b_X_d_e = " ".join(words[0:2]) + " " + ts(word) + " " + " ".join(words[3:5])
+            #print(a_b_X_d_e)
+            p_a_b_X_d_e = classencoder.buildpattern(a_b_X_d_e)
+            if fr(p_a_b_X_d_e) > best_f:
+                something_happened = True
+                best_f = fr(p_a_b_X_d_e)
+                best_s = a_b_X_d_e
+                best_w = ts(word)
+
+    if not something_happened:
+        for word,count in model.filter(1, size=1):
+            if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
+                a_b_X_d_e = " ".join(words[1:2]) + " " + ts(word) + " " + " ".join(words[3:4])
+                p_a_b_X_d_e = classencoder.buildpattern(a_b_X_d_e)
+                if fr(p_a_b_X_d_e) > best_f:
+                    something_happened = True
+                    best_f = fr(p_a_b_X_d_e)
+                    best_s = a_b_X_d_e
+                    best_w = ts(word)
+        if something_happened:
+            best_s = ws[0][1] + " " + best_s + " " + ws[4][1]
+
+    if not something_happened and not model.occurrencecount(ws[2][2]):
+        for word,count in model.filter(1, size=1):
+            if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
+                f = fr(word);
+                if f > best_f:
+                    something_happened = True
+                    best_f = f
+                    best_w = ts(word)
+        if something_happened:
+            best_s = ws[0][1] + " " + ws[1][1] + " " + best_w + " " + ws[3][1] + " " + ws[4][1]
+
+    correction = {}
+    correction['class'] = "replace"
+    correction['span'] = [ws[2][0]]
+    correction['text'] = best_w
+    return (something_happened and best_s != " ".join(words), best_s, correction)
 
 
 sentence = []
