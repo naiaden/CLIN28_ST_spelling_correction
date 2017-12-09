@@ -15,6 +15,12 @@ def fr(pattern):
     return model.frequency(pattern)
 
 ######################
+## Global functions on other stuff
+
+def id(folia_id):
+    return folia_id.split(".w.")[0]
+
+######################
 ## Correction units
 
 # Compare frequency of (a b c d e) with (a b cd e) and (a bc d e)
@@ -143,6 +149,7 @@ model.train("/home/louis/Data/corpus/small.colibri.dat", options)
 
 ######################
 ## Run the game
+
 test_sentence = "\"Argyroploce lutosana\" is een vlnder uit familie van de bladrollers (Tortricidae)."
 pts = classencoder.buildpattern(test_sentence, allowunknown=False, autoaddunknown=True)
 
@@ -186,3 +193,13 @@ while change:
     print(change)
 
 print(final_sentence)
+
+######################
+## Going for the finals['text']
+
+import json
+page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/page1144.json'))
+page1144_corrections = page1144['corrections']
+page1144_words = page1144['words']
+for sentence in page1144_words:
+    print(sentence)
