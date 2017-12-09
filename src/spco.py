@@ -90,18 +90,23 @@ def replaceables(pattern):
 #p3 = classencoder.buildpattern("een vlinder vit de familie")
 #replaceables(p3)
 
-# Compare frequency of (a b c d e) with (a b c X d e)
+# Compare frequency of (a b c d e) with (a b c X d e) (e is ignored)
 def missing_words(pattern):
     best_f = fr(pattern)
-    best_p = ts(pattern)
+    best_s = ts(pattern)
 
     for word,count in model.filter(1, size=1):
         if not word.unknown():
+            a_b_c_X_d_e = ts(pattern[0:3]) + " " + ts(word) + " " + ts(pattern[3:4])
+            p_a_b_c_X_d_e = classencoder.buildpattern(a_b_c_X_d_e)
+            f_a_b_c_X_d_e = fr(p_a_b_c_X_d_e)
+            if f_a_b_c_X_d_e > best_f:
+                best_f = f_a_b_c_X_d_e
+                best_s = a_b_c_X_d_e
+    return best_s
 
-        a b XXX d
-        if f_a_b_c_d_e > f_a_b_d_e:
-            best_f = f_a_b_c_d_e
-            best_p = a_b_c_d_e
+#p4 = classencoder.buildpattern("een vlinder uit familie van")
+#missing_words(p4)
 
 ######################
 ## Run the game
