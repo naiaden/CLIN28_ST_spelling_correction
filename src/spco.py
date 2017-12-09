@@ -1,5 +1,6 @@
 import colibricore
 import Levenshtein
+import copy
 
 ######################
 ## Global functions on colibricore.Pattern
@@ -69,7 +70,7 @@ def runon_errors(pattern):
                 best_f = f_candidate
                 best_s = s_candidate
 
-    return (something_happened, best_s)
+    return (something_happened and best_s != ts(pattern), best_s)
 
 #p1 = classencoder.buildpattern("een vlinder uit de familie")
 #runon_errors(p1)
@@ -102,8 +103,8 @@ def replaceables(pattern):
                     best_f = fr(p_a_b_X_d_e)
                     best_s = a_b_X_d_e
         if not nothing_happened:
-            return (True, ts(pattern[0]) + " " + best_s + " " + ts(pattern[4]))
-    return (not nothing_happened, best_s)
+            best_s = ts(pattern[0]) + " " + best_s + " " + ts(pattern[4])
+    return (not nothing_happened and best_s != ts(pattern), best_s)
 
 #p3a = classencoder.buildpattern("een vlinder vit de familie")
 #replaceables(p3a)
@@ -126,7 +127,7 @@ def missing_words(pattern):
                 something_happened = True
                 best_f = f_a_b_c_X_d_e
                 best_s = a_b_c_X_d_e
-    return (something_happened, best_s)
+    return (something_happened and best_s != ts(pattern), best_s)
 
 #p4 = classencoder.buildpattern("een vlinder uit familie van")
 #missing_words(p4)
@@ -149,9 +150,39 @@ classencoder.save('/tmp/ce')
 classdecoder = colibricore.ClassDecoder('/tmp/ce')
 
 ts(pts)
-for fivegram in pts.ngrams(5):
-    print("===" + ts(fivegram) + "===")
-    print("RUNON:\t" + str(runon_errors(fivegram)))
-    print("SPLIT:\t" + str(split_errors(fivegram)))
-    print("REPLA:\t" + str(replaceables(fivegram)))
-    print("MISNG:\t" + str(missing_words(fivegram)))
+change = True
+final_sentence = copy.copy(test_sentence)
+while change:
+    change = False
+    pts = classencoder.buildpattern(final_sentence, allowunknown=False, autoaddunknown=True)
+    print("--------------" + final_sentence + "--------------")
+
+    for fivegram in pts.ngrams(5):
+        print("===" + ts(fivegram) + "===")
+
+        runon = runon_errors(fivegram)
+        change |= runon[0]
+        if runon[0]:
+            final_sentence = final_sentence.replace(ts(fivegram), runon[1])
+            print("RUNON:\t" + "replace " + ts(fivegram) + " with " + runon[1])
+
+        split = split_errors(fivegram)
+        change |= split[0]
+        if split[0]:
+            final_sentence = final_sentence.replace(ts(fivegram), split[1])
+            print("SPLIT:\t" + "replace " + ts(fivegram) + " with " + split[1])
+
+        replace = replaceables(fivegram)
+        change |= replace[0]
+        if replace[0]:
+            final_sentence = final_sentence.replace(ts(fivegram), replace[1])
+            print("REPLA:\t" + "replace " + ts(fivegram) + " with " + replace[1])
+
+        missing = missing_words(fivegram)
+        change |= missing[0]
+        if missing[0]:
+            final_sentence = final_sentence.replace(ts(fivegram[0:4]), missing[1])
+            print("MISNG:\t" + "replace " + ts(fivegram) + " with " + missing[1])
+    print(change)
+
+print(final_sentence)
