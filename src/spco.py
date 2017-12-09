@@ -135,6 +135,8 @@ def missing_words(pattern):
                 best_s = a_b_c_X_d_e
     return (something_happened and best_s != ts(pattern), best_s)
 
+
+
 #p4 = classencoder.buildpattern("een vlinder uit familie van")
 #missing_words(p4)
 
@@ -195,11 +197,91 @@ while change:
 print(final_sentence)
 
 ######################
+## what
+
+def window(iterable, size=2):
+    i = iter(iterable)
+    win = []
+    for e in range(0, size):
+        win.append(next(i))
+    yield win
+    for e in i:
+        win = win[1:] + [e]
+        yield win
+
+def process(something):
+    for w in window(something, 5):
+        print(missing_words_window(w))
+
+######################
 ## Going for the finals['text']
 
+# add stuff to encoder?
+
 import json
-page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/page1144.json'))
+page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
 page1144_corrections = page1144['corrections']
 page1144_words = page1144['words']
-for sentence in page1144_words:
-    print(sentence)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def missing_words_window(ws):
+    print("====================")
+    words = [w[1] for w in ws]
+    
+    something_happened = False
+    #
+    best_s = classencoder.buildpattern(" ".join(words))
+    best_f = fr(best_s)
+    best_w = ""
+    #
+    for word,count in model.filter(1, size=1):
+        if not word.unknown():
+            a_b_c_X_d_e = " ".join(words[0:3]) + " " + ts(word) + " " + " ".join(words[3:4])
+            p_a_b_c_X_d_e = classencoder.buildpattern(a_b_c_X_d_e)
+            f_a_b_c_X_d_e = fr(p_a_b_c_X_d_e)
+            if f_a_b_c_X_d_e > best_f:
+                something_happened = True
+                best_f = f_a_b_c_X_d_e
+                best_s = a_b_c_X_d_e
+                best_w = ts(word)
+    correction = {}
+    correction['class'] = "missingword"
+    correction['after'] = ws[2][0]
+    correction['text'] = best_w
+    return (something_happened and best_s != ts(pattern), best_s, correction)
+
+
+
+
+sentence = []
+current_in = page1144_words[0]['in']
+for item in page1144_words:
+    if current_in != item['in']:
+        current_in = item['in']
+        process(sentence)
+        sentence = []
+    sentence.append([item['id'],
+                     item['text'],
+                     classencoder.buildpattern(item['text'], allowunknown=False, autoaddunknown=True),
+                     item['space'],
+                     item['in']])
+process(sentence)
