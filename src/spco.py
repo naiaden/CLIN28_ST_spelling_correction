@@ -212,7 +212,8 @@ def window(iterable, size=2):
 def process(something):
     for w in window(something, 5):
         #print(missing_words_window(w))
-        print(replaceables_window(w))
+        #print(replaceables_window(w))
+        print(runon_errors_window(w))
 
 ######################
 ## Going for the finals['text']
@@ -324,6 +325,48 @@ def replaceables_window(ws):
     correction['span'] = [ws[2][0]]
     correction['text'] = best_w
     return (something_happened and best_s != " ".join(words), best_s, correction)
+
+# Compare frequency of (a b cd e) with (a b c d e)
+def runon_errors_window(pattern):
+    print("====================")
+    words = [w[1] for w in ws]
+
+    something_happened = False
+
+    c = ws[2][1]
+
+    best_s = classencoder.buildpattern(" ".join(words))
+    best_f = fr(best_s)
+
+    middle = "".join(words[2:4])
+    for x in range(len(middle)):
+        candidate = copy.copy(middle)
+        candidate = '{0} {1}'.format(candidate[:x], candidate[x:])
+
+
+    # t_pattern = ts(pattern).split(" ")
+    # middle = "".join(t_pattern[1:4])
+    #
+    # for x in range(len(middle)):
+    #     for y in range(len(middle)):
+    #         candidate = copy.copy(middle)
+    #         candidate = '{0} {1}'.format(candidate[:x], candidate[x:])
+    #         candidate = '{0} {1}'.format(candidate[:y], candidate[y:])
+    #
+    #         s_candidate = (t_pattern[0] + " " + candidate + " " + t_pattern[4]).replace("  ", " ")
+    #         p_candidate = classencoder.buildpattern(s_candidate)
+    #         f_candidate = fr(p_candidate)
+    #         if f_candidate > best_f:
+    #             something_happened = True
+    #             best_f = f_candidate
+    #             best_s = s_candidate
+    #
+    correction = {}
+    correction['class'] = "runonerror"
+    correction['span'] = [ws[2][0]]
+    correction['text'] = "hoi"
+    return (something_happened and best_s != " ".join(words), best_s, correction)
+
 
 
 sentence = []
