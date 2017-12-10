@@ -1,6 +1,7 @@
 import colibricore
 import Levenshtein
 import copy
+import json
 
 ######################
 ## Global functions on colibricore.Pattern
@@ -209,12 +210,7 @@ def window(iterable, size=2):
         win = win[1:] + [e]
         yield win
 
-def process(something):
-    for w in window(something, 5):
-        #print(missing_words_window(w))
-        #print(replaceables_window(w))
-        #print(runon_errors_window(w))
-        print(split_errors_window(w))
+
 
 ######################
 ## Going for the finals['text']
@@ -226,28 +222,7 @@ page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesm
 page1144_corrections = page1144['corrections']
 page1144_words = page1144['words']
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def missing_words_window(ws):
-    print("====================")
     words = [w[1] for w in ws]
 
     something_happened = False
@@ -275,7 +250,6 @@ def missing_words_window(ws):
 # archaic, non-word and confusables:
 # Compare frequency of (a b c d e) with (a b X d e)
 def replaceables_window(ws):
-    print("====================")
     words = [w[1] for w in ws]
 
     something_happened = False
@@ -329,7 +303,6 @@ def replaceables_window(ws):
 
 # Compare frequency of (a b cd e f) with (a b c d e f)
 def runon_errors_window(ws):
-    print("====================")
     words = [w[1] for w in ws]
 
     something_happened = False
@@ -361,7 +334,6 @@ def runon_errors_window(ws):
 
 # Compare frequency of (a b c d e) with (a b cd e)
 def split_errors_window(ws):
-    print("====================")
     words = [w[1] for w in ws]
 
     something_happened = False
@@ -374,7 +346,6 @@ def split_errors_window(ws):
     a_b_cd_e = ws[2][1]+ws[3][1]
     p_a_b_cd_e = classencoder.buildpattern(a_b_cd_e)
     f_a_b_cd_e = fr(p_a_b_cd_e)
-    print(a_b_cd_e + "\t" + str(f_a_b_cd_e))
 
     if f_a_b_cd_e > best_f and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
         something_happened = True
@@ -388,6 +359,63 @@ def split_errors_window(ws):
     correction['span'] = best_span
     correction['text'] = best_candidate
     return (something_happened, best_s, correction)
+
+def action_in_sentence(sentence, correction):
+    print(correction)
+    if correction['class'] == "runonerror":
+        for iter,id in enumerate(sentence):
+            if id[0] == correction['span'][0]:
+                id[1] = correction['text'].split(" ")[0]
+                print(id[1] + " " + str(iter))
+                id[2] = classencoder.buildpattern(correction['text'].split(" ")[0], allowunknown=False, autoaddunknown=True)
+                break
+        new_entry = [id[0] + "R",
+                     correction['text'].split(" ")[1],
+                     classencoder.buildpattern(correction['text'].split(" ")[1], allowunknown=False, autoaddunknown=True),
+                     item['space'],
+                     item['in']]
+        sentence.insert(iter+1, new_entry)
+    if correction['class'] == "replace":
+        for iter,id in enumerate(sentence):
+            if id[0] == correction['span'][0]:
+                id[1] = correction['text']
+                id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
+                break
+    print(sentence)
+
+def process(something):
+    string_sentence = " ".join([x[1] for x in something])
+    wip_sentence = copy.copy(something)
+    print("\nSENTENCE: " + string_sentence)
+    for w in window(something, 5):
+        string_window = " ".join([x[1] for x in w])
+        print("\t===" + string_window)
+        #print(missing_words_window(w))
+
+        runon = runon_errors_window(w)
+        #change |= split[0]
+        if runon[0]:
+            action_in_sentence(wip_sentence, runon[2])
+            # string_sentence = string_sentence.replace(string_window, runon[1])
+            # print("\tRUNON:\t" + "replace [" + string_window + "] with [" + runon[1] + "]")
+            # print("\t\t>: " + string_sentence)
+
+        replaceable = replaceables_window(w)
+        #change |= split[0]
+        if replaceable[0]:
+            action_in_sentence(wip_sentence, replaceable[2])
+            # string_sentence = string_sentence.replace(string_window, replaceable[1])
+            # print("\tREPLA:\t" + "replace [" + string_window + "] with [" + replaceable[1] + "]")
+            # print("\t\t>: " + string_sentence)
+
+        split = split_errors_window(w)
+        #change |= split[0]
+        if split[0]:
+            pass
+            # string_sentence = string_sentence.replace(string_window, split[1])
+            # print("\tSPLIT:\t" + "replace [" + string_window + "] with [" + split[1] + "]")
+            # print("\t\t>: " + string_sentence)
+    print("\nRESULT: " + string_sentence)
 
 sentence = []
 current_in = page1144_words[0]['in']
