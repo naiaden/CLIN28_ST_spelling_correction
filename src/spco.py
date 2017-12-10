@@ -371,21 +371,17 @@ def split_errors_window(ws):
     best_f = fr(classencoder.buildpattern(best_candidate))
     best_span = ""
 
-    #a_b_cd_e = ws[0][1] + " " + ws[1][1] + " " + ws[2][1]+ws[3][1] + " " + ws[4][1]
     a_b_cd_e = ws[2][1]+ws[3][1]
     p_a_b_cd_e = classencoder.buildpattern(a_b_cd_e)
     f_a_b_cd_e = fr(p_a_b_cd_e)
     print(a_b_cd_e + "\t" + str(f_a_b_cd_e))
 
-    if f_a_b_cd_e > best_f:
+    if f_a_b_cd_e > best_f and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
         something_happened = True
         best_f = f_a_b_cd_e
         best_s = ws[0][1] + " " + ws[1][1] + " " + ws[2][1]+ws[3][1] + " " + ws[4][1]
         best_candidate = ws[2][1] + ws[3][1]
         best_span = [ws[2][0],ws[3][0]]
-
-
-    #maybe prevent if oc(ws[1][1]+ws[2][1]) ??
 
     correction = {}
     correction['class'] = "spliterror"
