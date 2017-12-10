@@ -34,6 +34,22 @@ def window(iterable, size=2):
 ######################
 ## Correction units
 
+def number_to_text(number):
+    if number >=0 and number <= 20:
+        return ["nul", "een", "twee", "drie", "vier", "vijf", "zes", "zeven",
+                "acht", "negen", "tien", "elf", "twaalf", "dertien", "veertien",
+                "vijftien", "zestien", "zeventien", "achttien", "negentien", "twintig"][number]
+    elif not number%10 and number <= 100:
+        return ["dertig", "veertig", "vijftig", "zestig",
+                "zeventig", "tachtig", "negentig", "honderd"][int(number/10)-3]
+    elif not number%100 and number <= 1000:
+        return ["tweehonderd", "driehonderd", "vierhonderd", "vijfhonderd", "zeshonderd",
+                "zevenhonderd", "achthonderd", "negenhonderd", "duizend"][int(number/100)-2]
+    elif not number%1000 and number <= 12000:
+        return ["tweeduizend", "drieduizend", "vierduizend", "vijfduizend", "zesduizend", "zevenduizend",
+                "achtduizend", "negenduizend", "tienduizend", "elfduizend", "twaalfduizend"][int(number/1000)-2]
+    else:
+        return str(number)
 
 # archaic, non-word and confusables:
 # Compare frequency of (a b c d e) with (a b X d e)
@@ -150,33 +166,6 @@ def split_errors_window(ws):
     correction['text'] = best_candidate
     return (something_happened, best_s, correction)
 
-
-######################
-## Set the stage
-
-classencoder = colibricore.ClassEncoder("/home/louis/Data/corpus/small.colibri.cls")
-classdecoder = colibricore.ClassDecoder("/home/louis/Data/corpus/small.colibri.cls")
-options = colibricore.PatternModelOptions(minlength=1, maxlength=5)
-model = colibricore.UnindexedPatternModel()
-model.train("/home/louis/Data/corpus/small.colibri.dat", options)
-
-######################
-## Run the game
-
-
-
-
-
-######################
-## Going for the finals['text']
-
-# add stuff to encoder?
-
-import json
-page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
-page1144_corrections = page1144['corrections']
-page1144_words = page1144['words']
-
 def missing_words_window(ws):
     words = [w[1] for w in ws]
 
@@ -196,11 +185,34 @@ def missing_words_window(ws):
                 best_f = f_a_b_c_X_d_e
                 best_s = a_b_c_X_d_e
                 best_w = ts(word)
+        # backoff option?
     correction = {}
     correction['class'] = "missingword"
     correction['after'] = ws[2][0]
     correction['text'] = best_w
     return (something_happened and best_s != " ".join(words), best_s, correction)
+
+######################
+## Set the stage
+
+classencoder = colibricore.ClassEncoder("/home/louis/Data/corpus/small.colibri.cls")
+classdecoder = colibricore.ClassDecoder("/home/louis/Data/corpus/small.colibri.cls")
+options = colibricore.PatternModelOptions(minlength=1, maxlength=5)
+model = colibricore.UnindexedPatternModel()
+model.train("/home/louis/Data/corpus/small.colibri.dat", options)
+
+######################
+## Run the game
+
+# add stuff to encoder?
+
+import json
+# page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
+page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/validation/page1.json'))
+page1144_corrections = page1144['corrections']
+page1144_words = page1144['words']
+
+
 
 def action_in_sentence(sentence, correction):
     print(correction)
