@@ -2,6 +2,8 @@ import colibricore
 import Levenshtein
 import copy
 import json
+import string
+import unidecode
 
 ######################
 ## Global functions on colibricore.Pattern
@@ -31,25 +33,59 @@ def window(iterable, size=2):
         win = win[1:] + [e]
         yield win
 
+punct_translator = str.maketrans('', '', string.punctuation)
+
+######################
+## Set the stage
+
+classencoder = colibricore.ClassEncoder("/home/louis/Data/corpus/small.colibri.cls")
+classdecoder = colibricore.ClassDecoder("/home/louis/Data/corpus/small.colibri.cls")
+options = colibricore.PatternModelOptions(minlength=1, maxlength=5)
+model = colibricore.UnindexedPatternModel()
+model.train("/home/louis/Data/corpus/small.colibri.dat", options)
+model.write("/home/louis/Data/corpus/small.colibri.upatternmodel")
+
+######################
+## Run the game
+
+# add stuff to encoder?
+
+import json
+# page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
+page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/validation/page1.json'))
+page1144_corrections = page1144['corrections']
+page1144_words = page1144['words']
+
 ######################
 ## Correction units
 
+def is_year(number):
+    try:
+        number = int(number)
+        return number > 1750 and number < 2100
+    except (ValueError, TypeError):
+            return False;
+
 def number_to_text(number):
-    if number >=0 and number <= 20:
-        return ["nul", "een", "twee", "drie", "vier", "vijf", "zes", "zeven",
-                "acht", "negen", "tien", "elf", "twaalf", "dertien", "veertien",
-                "vijftien", "zestien", "zeventien", "achttien", "negentien", "twintig"][number]
-    elif not number%10 and number <= 100:
-        return ["dertig", "veertig", "vijftig", "zestig",
-                "zeventig", "tachtig", "negentig", "honderd"][int(number/10)-3]
-    elif not number%100 and number <= 1000:
-        return ["tweehonderd", "driehonderd", "vierhonderd", "vijfhonderd", "zeshonderd",
-                "zevenhonderd", "achthonderd", "negenhonderd", "duizend"][int(number/100)-2]
-    elif not number%1000 and number <= 12000:
-        return ["tweeduizend", "drieduizend", "vierduizend", "vijfduizend", "zesduizend", "zevenduizend",
-                "achtduizend", "negenduizend", "tienduizend", "elfduizend", "twaalfduizend"][int(number/1000)-2]
-    else:
-        return str(number)
+    try:
+        if number >=0 and number <= 20:
+            return ["nul", "een", "twee", "drie", "vier", "vijf", "zes", "zeven",
+                    "acht", "negen", "tien", "elf", "twaalf", "dertien", "veertien",
+                    "vijftien", "zestien", "zeventien", "achttien", "negentien", "twintig"][number]
+        elif not number%10 and number <= 100:
+            return ["dertig", "veertig", "vijftig", "zestig",
+                    "zeventig", "tachtig", "negentig", "honderd"][int(number/10)-3]
+        elif not number%100 and number <= 1000:
+            return ["tweehonderd", "driehonderd", "vierhonderd", "vijfhonderd", "zeshonderd",
+                    "zevenhonderd", "achthonderd", "negenhonderd", "duizend"][int(number/100)-2]
+        elif not number%1000 and number <= 12000:
+            return ["tweeduizend", "drieduizend", "vierduizend", "vijfduizend", "zesduizend", "zevenduizend",
+                    "achtduizend", "negenduizend", "tienduizend", "elfduizend", "twaalfduizend"][int(number/1000)-2]
+        else:
+            return str(number)
+    except TypeError:
+        return number;
+
 
 # archaic, non-word and confusables:
 # Compare frequency of (a b c d e) with (a b X d e)
@@ -64,6 +100,10 @@ def replaceables_window(ws):
     best_f = fr(best_s)
     best_w = c
 
+    if is_year(c):
+        return (False, best_s, {})
+
+    # 2-2 word context
     for word,count in model.filter(1, size=1):
         if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
             a_b_X_d_e = " ".join(words[0:2]) + " " + ts(word) + " " + " ".join(words[3:5])
@@ -75,6 +115,7 @@ def replaceables_window(ws):
                 best_s = a_b_X_d_e
                 best_w = ts(word)
 
+    # 1-1 word context
     if not something_happened:
         for word,count in model.filter(1, size=1):
             if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
@@ -88,6 +129,7 @@ def replaceables_window(ws):
         if something_happened:
             best_s = ws[0][1] + " " + best_s + " " + ws[4][1]
 
+    # no context
     if not something_happened and not model.occurrencecount(ws[2][2]):
         for word,count in model.filter(1, size=1):
             if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
@@ -101,6 +143,12 @@ def replaceables_window(ws):
 
     correction = {}
     correction['class'] = "replace"
+    if c.lower() == best_w.lower():
+        correction['class'] = "capitalizationerror"
+    elif c.translate(punct_translator) == best_w.translate(punct_translator) or unidecode.unidecode(c) == unidecode.unidecode(best_w):
+        correction['class'] = "redundantpunctuation"
+    elif not model.occurrencecount(ws[2][2]):
+        correction['class'] = "nonworderror"
     correction['span'] = [ws[2][0]]
     correction['text'] = best_w
     return (something_happened and best_s != " ".join(words), best_s, correction)
@@ -192,25 +240,7 @@ def missing_words_window(ws):
     correction['text'] = best_w
     return (something_happened and best_s != " ".join(words), best_s, correction)
 
-######################
-## Set the stage
 
-classencoder = colibricore.ClassEncoder("/home/louis/Data/corpus/small.colibri.cls")
-classdecoder = colibricore.ClassDecoder("/home/louis/Data/corpus/small.colibri.cls")
-options = colibricore.PatternModelOptions(minlength=1, maxlength=5)
-model = colibricore.UnindexedPatternModel()
-model.train("/home/louis/Data/corpus/small.colibri.dat", options)
-
-######################
-## Run the game
-
-# add stuff to encoder?
-
-import json
-# page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
-page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/validation/page1.json'))
-page1144_corrections = page1144['corrections']
-page1144_words = page1144['words']
 
 
 
