@@ -381,6 +381,15 @@ def action_in_sentence(sentence, correction):
                 id[1] = correction['text']
                 id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
                 break
+    if correction['class'] == "spliterror":
+        for iter,id in enumerate(sentence):
+            if id[0] == correction['span'][0]:
+                id[1] = correction['text']
+                id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
+            if id[0] == correction['span'][1]:
+                break
+        del sentence[iter]
+
     print(sentence)
 
 def process(something):
@@ -411,7 +420,7 @@ def process(something):
         split = split_errors_window(w)
         #change |= split[0]
         if split[0]:
-            pass
+            action_in_sentence(wip_sentence, split[2])
             # string_sentence = string_sentence.replace(string_window, split[1])
             # print("\tSPLIT:\t" + "replace [" + string_window + "] with [" + split[1] + "]")
             # print("\t\t>: " + string_sentence)
