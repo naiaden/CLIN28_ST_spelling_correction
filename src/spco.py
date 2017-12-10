@@ -342,12 +342,14 @@ def split_errors_window(ws):
     best_candidate = ws[2][1] + " " + ws[3][1]
     best_f = fr(classencoder.buildpattern(best_candidate))
     best_span = ""
+    # print(best_candidate + "\t" + str(best_f))
 
     a_b_cd_e = ws[2][1]+ws[3][1]
     p_a_b_cd_e = classencoder.buildpattern(a_b_cd_e)
     f_a_b_cd_e = fr(p_a_b_cd_e)
+    # print(a_b_cd_e + "\t" + str(f_a_b_cd_e) + "\t" + str(oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1]))))
 
-    if f_a_b_cd_e > best_f and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
+    if f_a_b_cd_e > best_f:# and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
         something_happened = True
         best_f = f_a_b_cd_e
         best_s = ws[0][1] + " " + ws[1][1] + " " + ws[2][1]+ws[3][1] + " " + ws[4][1]
@@ -390,7 +392,7 @@ def action_in_sentence(sentence, correction):
                 break
         del sentence[iter]
 
-    print(sentence)
+    return sentence
 
 def process(something):
     string_sentence = " ".join([x[1] for x in something])
@@ -404,7 +406,7 @@ def process(something):
         runon = runon_errors_window(w)
         #change |= split[0]
         if runon[0]:
-            action_in_sentence(wip_sentence, runon[2])
+            wip_sentence = action_in_sentence(wip_sentence, runon[2])
             # string_sentence = string_sentence.replace(string_window, runon[1])
             # print("\tRUNON:\t" + "replace [" + string_window + "] with [" + runon[1] + "]")
             # print("\t\t>: " + string_sentence)
@@ -412,7 +414,7 @@ def process(something):
         replaceable = replaceables_window(w)
         #change |= split[0]
         if replaceable[0]:
-            action_in_sentence(wip_sentence, replaceable[2])
+            wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
             # string_sentence = string_sentence.replace(string_window, replaceable[1])
             # print("\tREPLA:\t" + "replace [" + string_window + "] with [" + replaceable[1] + "]")
             # print("\t\t>: " + string_sentence)
@@ -420,11 +422,11 @@ def process(something):
         split = split_errors_window(w)
         #change |= split[0]
         if split[0]:
-            action_in_sentence(wip_sentence, split[2])
+            wip_sentence = action_in_sentence(wip_sentence, split[2])
             # string_sentence = string_sentence.replace(string_window, split[1])
             # print("\tSPLIT:\t" + "replace [" + string_window + "] with [" + split[1] + "]")
             # print("\t\t>: " + string_sentence)
-    print("\nRESULT: " + string_sentence)
+    print("\nRESULT: " + " ".join([x[1] for x in wip_sentence]))
 
 sentence = []
 current_in = page1144_words[0]['in']
