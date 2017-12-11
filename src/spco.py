@@ -4,6 +4,7 @@ import copy
 import json
 import string
 import unidecode
+import pprint
 
 ######################
 ## Global functions on colibricore.Pattern
@@ -55,6 +56,10 @@ import json
 page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/validation/page1.json'))
 page1144_corrections = page1144['corrections']
 page1144_words = page1144['words']
+
+sos_filler = ['id-not-available', '<s>', classencoder.buildpattern(" "), True, 'in-not-available']
+eos_filler = ['id-not-available', '</s>', classencoder.buildpattern(" "), True, 'in-not-available']
+
 
 ######################
 ## Correction units
@@ -334,17 +339,31 @@ def process(something):
     return corrections
 
 sentence = []
+sentence.append(sos_filler)
+sentence.append(sos_filler)
 page_corrections = []
 current_in = page1144_words[0]['in']
 for item in page1144_words:
     if current_in != item['in']:
         current_in = item['in']
+
+        sentence.append(eos_filler)
+        sentence.append(eos_filler)
         page_corrections += process(sentence)
         sentence = []
+        sentence.append(sos_filler)
+        sentence.append(sos_filler)
+        # page1144_words.insert(0, sos_filler)
+        # page1144_words.insert(0, sos_filler)
     sentence.append([item['id'],
                      item['text'],
                      classencoder.buildpattern(item['text'], allowunknown=False, autoaddunknown=True),
                      item['space'],
                      item['in']])
 page_corrections += process(sentence)
-print(page_corrections)
+
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint({'corrections': page_corrections, 'words': page1144_words})
+
+# with open('/bla/', 'w') as f:
+#     json.dumps({'corrections': page_corrections, 'words': page1144_words}, f)
