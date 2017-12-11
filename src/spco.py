@@ -6,6 +6,15 @@ import string
 import unidecode
 import pprint
 
+import argparse
+
+argparser = argparse.ArgumentParser(description="Spelling correction based on 5-grams.", epilog="Developed for the CLIN28 shared task on spelling correction for contemporary Dutch. Reach me at louis@naiaden.nl for questions or visit https://github.com/naiaden/COCOCLINSPCO/")
+argparser.add_argument('classfile', help="encoded classes")
+argparser.add_argument('datafile', help="encoded data")
+argparser.add_argument('modelfile', help="(un)indexed pattern model")
+argparser.add_argument('outputdir', help="output directory")
+args, unknownargs = argparser.parse_known_args()
+
 ######################
 ## Global functions on colibricore.Pattern
 
@@ -39,17 +48,17 @@ punct_translator = str.maketrans('', '', string.punctuation)
 ######################
 ## Set the stage
 
-classencoder = colibricore.ClassEncoder("/home/louis/Data/corpus/small.colibri.cls")
-classdecoder = colibricore.ClassDecoder("/home/louis/Data/corpus/small.colibri.cls")
+classencoder = colibricore.ClassEncoder(args.classfile)
+classdecoder = colibricore.ClassDecoder(args.classfile)
 options = colibricore.PatternModelOptions(minlength=1, maxlength=5)
 model = colibricore.UnindexedPatternModel()
-model.train("/home/louis/Data/corpus/small.colibri.dat", options)
-model.write("/home/louis/Data/corpus/small.colibri.upatternmodel")
+model.train(args.datafile, options)
+model.write(args.modelfile)
 
 ######################
 ## Run the game
 
-# add stuff to encoder?
+# add stuff to encoder? Nah!
 
 import json
 # page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
@@ -264,7 +273,7 @@ def action_in_sentence(sentence, correction):
                      item['space'],
                      item['in']]
         sentence.insert(iter+1, new_entry)
-    if correction['class'] == "replace":
+    if correction['class'] == "replace" or correction['capitalizationerror'] == "nonworderror" or correction['class'] == "nonworderror":
         for iter,id in enumerate(sentence):
             if id[0] == correction['span'][0]:
                 id[1] = correction['text']
@@ -317,7 +326,9 @@ def process(something):
             change |= replaceable[0]
             if replaceable[0]:
                 corrections.append(replaceable[2])
+                #print(wip_sentence)
                 wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
+                #print(wip_sentence)
 
             split = split_errors_window(w)
             change |= split[0]
@@ -332,6 +343,7 @@ def process(something):
                 wip_sentence = action_in_sentence(wip_sentence, missing[2])
         print("\nRESULT: " + " ".join([x[1] for x in wip_sentence]))
     return corrections
+
 
 sentence = []
 sentence.append(sos_filler)
