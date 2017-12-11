@@ -301,34 +301,24 @@ def process(something):
     for w in window(something, 5):
         string_window = " ".join([x[1] for x in w])
         print("\t===" + string_window)
-        #print(missing_words_window(w))
 
         runon = runon_errors_window(w)
         #change |= split[0]
         if runon[0]:
             corrections.append(runon[2])
             wip_sentence = action_in_sentence(wip_sentence, runon[2])
-            # string_sentence = string_sentence.replace(string_window, runon[1])
-            # print("\tRUNON:\t" + "replace [" + string_window + "] with [" + runon[1] + "]")
-            # print("\t\t>: " + string_sentence)
 
         replaceable = replaceables_window(w)
         #change |= split[0]
         if replaceable[0]:
             corrections.append(replaceable[2])
             wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
-            # string_sentence = string_sentence.replace(string_window, replaceable[1])
-            # print("\tREPLA:\t" + "replace [" + string_window + "] with [" + replaceable[1] + "]")
-            # print("\t\t>: " + string_sentence)
 
         split = split_errors_window(w)
         #change |= split[0]
         if split[0]:
             corrections.append(split[2])
             wip_sentence = action_in_sentence(wip_sentence, split[2])
-            # string_sentence = string_sentence.replace(string_window, split[1])
-            # print("\tSPLIT:\t" + "replace [" + string_window + "] with [" + split[1] + "]")
-            # print("\t\t>: " + string_sentence)
 
         missing = missing_words_window(w)
         #change |= split[0]
