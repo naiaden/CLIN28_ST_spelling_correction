@@ -297,35 +297,40 @@ def process(something):
 
     corrections = []
 
+    change = True
+
     print("\nSENTENCE: " + string_sentence)
-    for w in window(something, 5):
-        string_window = " ".join([x[1] for x in w])
-        print("\t===" + string_window)
+    while change:
+        change = False
+        temp_sent = copy.copy(wip_sentence)
+        for w in window(temp_sent, 5):
+            string_window = " ".join([x[1] for x in w])
+            print("\t===" + string_window)
 
-        runon = runon_errors_window(w)
-        #change |= split[0]
-        if runon[0]:
-            corrections.append(runon[2])
-            wip_sentence = action_in_sentence(wip_sentence, runon[2])
+            runon = runon_errors_window(w)
+            change |= runon[0]
+            if runon[0]:
+                corrections.append(runon[2])
+                wip_sentence = action_in_sentence(wip_sentence, runon[2])
 
-        replaceable = replaceables_window(w)
-        #change |= split[0]
-        if replaceable[0]:
-            corrections.append(replaceable[2])
-            wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
+            replaceable = replaceables_window(w)
+            change |= replaceable[0]
+            if replaceable[0]:
+                corrections.append(replaceable[2])
+                wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
 
-        split = split_errors_window(w)
-        #change |= split[0]
-        if split[0]:
-            corrections.append(split[2])
-            wip_sentence = action_in_sentence(wip_sentence, split[2])
+            split = split_errors_window(w)
+            change |= split[0]
+            if split[0]:
+                corrections.append(split[2])
+                wip_sentence = action_in_sentence(wip_sentence, split[2])
 
-        missing = missing_words_window(w)
-        #change |= split[0]
-        if missing[0]:
-            corrections.append(missing[2])
-            wip_sentence = action_in_sentence(wip_sentence, missing[2])
-    print("\nRESULT: " + " ".join([x[1] for x in wip_sentence]))
+            missing = missing_words_window(w)
+            change |= missing[0]
+            if missing[0]:
+                corrections.append(missing[2])
+                wip_sentence = action_in_sentence(wip_sentence, missing[2])
+        print("\nRESULT: " + " ".join([x[1] for x in wip_sentence]))
     return corrections
 
 sentence = []
