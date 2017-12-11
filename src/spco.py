@@ -273,7 +273,7 @@ def action_in_sentence(sentence, correction):
                      item['space'],
                      item['in']]
         sentence.insert(iter+1, new_entry)
-    if correction['class'] == "replace" or correction['capitalizationerror'] == "nonworderror" or correction['class'] == "nonworderror":
+    if correction['class'] == "replace" or correction['class'] == "nonworderror" or correction['class'] == "capitalizationerror" or correction['class'] == "redundantpunctuation":
         for iter,id in enumerate(sentence):
             if id[0] == correction['span'][0]:
                 id[1] = correction['text']
