@@ -264,7 +264,7 @@ def action_in_sentence(sentence, correction):
         for iter,id in enumerate(sentence):
             if id[0] == correction['span'][0]:
                 id[1] = correction['text'].split(" ")[0]
-                print(id[1] + " " + str(iter))
+                #print(id[1] + " " + str(iter))
                 id[2] = classencoder.buildpattern(correction['text'].split(" ")[0], allowunknown=False, autoaddunknown=True)
                 break
         new_entry = [id[0] + "R",
@@ -287,9 +287,10 @@ def action_in_sentence(sentence, correction):
             if id[0] == correction['span'][1]:
                 break
         del sentence[iter]
-    if correction['class'] == "missing":
+    if correction['class'] == "missingword":
         for iter, id in enumerate(sentence):
-            if id[0] == correction['after'][0]:
+            if id[0] == correction['after']:
+                #print("MW:\t" + str(iter) + "\t" + str(id))
                 break
         new_entry = [id[0] + "M",
                      correction['text'],
