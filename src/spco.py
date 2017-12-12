@@ -48,12 +48,17 @@ punct_translator = str.maketrans('', '', string.punctuation)
 ######################
 ## Set the stage
 
+import pathlib
+
 classencoder = colibricore.ClassEncoder(args.classfile)
 classdecoder = colibricore.ClassDecoder(args.classfile)
-options = colibricore.PatternModelOptions(minlength=1, maxlength=5)
-model = colibricore.UnindexedPatternModel()
-model.train(args.datafile, options)
-model.write(args.modelfile)
+options = colibricore.PatternModelOptions(minlength=1, maxlength=5, mintokens=1)
+
+if pathlib.Path(args.datafile).is_file():
+    model = colibricore.UnindexedPatternModel(args.datafile, options)
+else:
+    model.train(args.datafile, options)
+    model.write(args.modelfile)
 
 ######################
 ## Run the game
@@ -156,13 +161,15 @@ def replaceables_window(ws):
             best_s = ws[0][1] + " " + ws[1][1] + " " + best_w + " " + ws[3][1] + " " + ws[4][1]
 
     correction = {}
-    correction['class'] = "replace"
+    correction['superclass'] = "replace"
     if c.lower() == best_w.lower():
         correction['class'] = "capitalizationerror"
     elif c.translate(punct_translator) == best_w.translate(punct_translator) or unidecode.unidecode(c) == unidecode.unidecode(best_w):
         correction['class'] = "redundantpunctuation"
     elif not model.occurrencecount(ws[2][2]):
         correction['class'] = "nonworderror"
+    else:
+        correction['class'] = "replace"
     correction['span'] = [ws[2][0]]
     correction['text'] = best_w
     return (something_happened and best_s != " ".join(words), best_s, correction)
@@ -273,7 +280,7 @@ def action_in_sentence(sentence, correction):
                      item['space'],
                      item['in']]
         sentence.insert(iter+1, new_entry)
-    if correction['class'] == "replace" or correction['class'] == "nonworderror" or correction['class'] == "capitalizationerror" or correction['class'] == "redundantpunctuation":
+    if correction.get('superclass', "") == "replace":
         for iter,id in enumerate(sentence):
             if id[0] == correction['span'][0]:
                 id[1] = correction['text']
@@ -301,6 +308,17 @@ def action_in_sentence(sentence, correction):
 
     return sentence
 
+def apply_on_corrections(correction, corrections):
+    rv = False
+    if correction.get('superclass', "") == 'replace':
+        if correction['span'][0].endswith("M"):
+            for c in corrections:
+                if c['span'][0] == correction['span'][0]:
+                    c['class'] = correction['class']
+                    c['text'] = correction['text']
+                    rv = True
+    return rv
+
 def process(something):
     string_sentence = " ".join([x[1] for x in something])
     wip_sentence = copy.copy(something)
@@ -317,6 +335,8 @@ def process(something):
             string_window = " ".join([x[1] for x in w])
             print("\t===" + string_window)
 
+            # test if correction on correction
+
             runon = runon_errors_window(w)
             change |= runon[0]
             if runon[0]:
@@ -326,10 +346,12 @@ def process(something):
             replaceable = replaceables_window(w)
             change |= replaceable[0]
             if replaceable[0]:
-                corrections.append(replaceable[2])
-                #print(wip_sentence)
-                wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
-                #print(wip_sentence)
+                rv = apply_on_corrections(replaceable[2], corrections)
+                if not rv:
+                    corrections.append(replaceable[2])
+                    #print(wip_sentence)
+                    wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
+                    #print(wip_sentence)
 
             split = split_errors_window(w)
             change |= split[0]
@@ -373,5 +395,5 @@ page_corrections += process(sentence)
 pp = pprint.PrettyPrinter(indent=4)
 pp.pprint({'corrections': page_corrections, 'words': page1144_words})
 
-# with open('/bla/', 'w') as f:
-#     json.dumps({'corrections': page_corrections, 'words': page1144_words}, f)
+with open('/home/louis/Programming/COCOCLINSPCO/data/output/test2.json', 'w') as f:
+    json.dump({'corrections': page_corrections, 'words': page1144_words}, f)
