@@ -8,12 +8,19 @@ import pprint
 
 import argparse
 
+import random
+
 argparser = argparse.ArgumentParser(description="Spelling correction based on 5-grams.", epilog="Developed for the CLIN28 shared task on spelling correction for contemporary Dutch. Reach me at louis@naiaden.nl for questions or visit https://github.com/naiaden/COCOCLINSPCO/")
 argparser.add_argument('classfile', help="encoded classes")
 argparser.add_argument('datafile', help="encoded data")
 argparser.add_argument('modelfile', help="(un)indexed pattern model")
 argparser.add_argument('outputdir', help="output directory")
-args, unknownargs = argparser.parse_known_args()
+#args, unknownargs = argparser.parse_known_args()
+
+classfile = '/home/louis/Data/corpus/small.colibri.cls'#args.classfile
+datafile = '/home/louis/Data/corpus/small.colibri.dat'#args.datafile
+modelfile = '/home/louis/Data/corpus/small.colibri.model'#args.modelfile
+outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'#args.outputdir
 
 ######################
 ## Global functions on colibricore.Pattern
@@ -50,15 +57,16 @@ punct_translator = str.maketrans('', '', string.punctuation)
 
 import pathlib
 
-classencoder = colibricore.ClassEncoder(args.classfile)
-classdecoder = colibricore.ClassDecoder(args.classfile)
+classencoder = colibricore.ClassEncoder(classfile)
+classdecoder = colibricore.ClassDecoder(classfile)
 options = colibricore.PatternModelOptions(minlength=1, maxlength=5, mintokens=1)
 
-if pathlib.Path(args.datafile).is_file():
-    model = colibricore.UnindexedPatternModel(args.datafile, options)
+if pathlib.Path(modelfile).is_file():
+    model = colibricore.UnindexedPatternModel(modelfile, options)
 else:
-    model.train(args.datafile, options)
-    model.write(args.modelfile)
+    model = colibricore.UnindexedPatternModel()
+    model.train(datafile, options)
+    model.write(modelfile)
 
 ######################
 ## Run the game
@@ -238,6 +246,10 @@ def split_errors_window(ws):
 def missing_words_window(ws):
     words = [w[1] for w in ws]
 
+    # at most 1 insertion
+    if ws[3][0].endswith("M") or ws[2][0].endswith("M"):
+        return (False, "", {})
+
     something_happened = False
     #
     best_s = classencoder.buildpattern(" ".join(words))
@@ -299,7 +311,7 @@ def action_in_sentence(sentence, correction):
             if id[0] == correction['after']:
                 #print("MW:\t" + str(iter) + "\t" + str(id))
                 break
-        new_entry = [id[0] + "M",
+        new_entry = [id[0] + "." + str(random.randint(1,100)) + "M",
                      correction['text'],
                      classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True),
                      item['space'],
@@ -322,14 +334,23 @@ def apply_on_corrections(correction, corrections):
                     c['text'] = correction['text']
                     rv = True
                 if 'after' in c and c['after'] == f_id:
-                    c['class'] = correction['class']
+                    #c['class'] = correction['class']
                     c['text'] = correction['text']
                     rv = True
     return rv
 
+correction_cache = {}
+
 def process(something):
+    id_list = " ".join([x[0] for x in something])
+    if id_list in correction_cache:
+        print(">>> From cache")
+        return correction_cache[id_list]
+
     string_sentence = " ".join([x[1] for x in something])
     wip_sentence = copy.copy(something)
+
+
 
     corrections = []
 
@@ -350,6 +371,7 @@ def process(something):
             if runon[0]:
                 corrections.append(runon[2])
                 wip_sentence = action_in_sentence(wip_sentence, runon[2])
+                print([(x[0],x[1]) for x in wip_sentence])
 
             replaceable = replaceables_window(w)
             change |= replaceable[0]
@@ -360,6 +382,7 @@ def process(something):
                     corrections.append(replaceable[2])
                     #print(wip_sentence)
                     wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
+                    print([(x[0],x[1]) for x in wip_sentence])
                     #print(wip_sentence)
 
             split = split_errors_window(w)
@@ -367,15 +390,19 @@ def process(something):
             if split[0]:
                 corrections.append(split[2])
                 wip_sentence = action_in_sentence(wip_sentence, split[2])
+                print([(x[0],x[1]) for x in wip_sentence])
 
             missing = missing_words_window(w)
             change |= missing[0]
             if missing[0]:
                 corrections.append(missing[2])
                 wip_sentence = action_in_sentence(wip_sentence, missing[2])
+                print([(x[0],x[1]) for x in wip_sentence])
         print("\nRESULT: " + " ".join([x[1] for x in wip_sentence]))
+    correction_cache[id_list] = corrections
     return corrections
 
+sent_iter = 1
 
 sentence = []
 sentence.append(sos_filler)
@@ -389,6 +416,9 @@ for item in page1144_words:
         sentence.append(eos_filler)
         sentence.append(eos_filler)
         page_corrections += process(sentence)
+        if sent_iter > 2:
+            break
+        sent_iter += 1
         sentence = []
         sentence.append(sos_filler)
         sentence.append(sos_filler)
