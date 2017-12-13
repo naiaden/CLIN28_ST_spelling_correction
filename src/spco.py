@@ -311,9 +311,17 @@ def action_in_sentence(sentence, correction):
 def apply_on_corrections(correction, corrections):
     rv = False
     if correction.get('superclass', "") == 'replace':
+        # print("-" + str(correction))
         if correction['span'][0].endswith("M"):
+            f_id = correction['span'][0]
+
             for c in corrections:
-                if c['span'][0] == correction['span'][0]:
+                # print("--" + str(c))
+                if 'span' in c and c['span'][0] == f_id:
+                    c['class'] = correction['class']
+                    c['text'] = correction['text']
+                    rv = True
+                if 'after' in c and c['after'] == f_id:
                     c['class'] = correction['class']
                     c['text'] = correction['text']
                     rv = True
@@ -346,6 +354,7 @@ def process(something):
             replaceable = replaceables_window(w)
             change |= replaceable[0]
             if replaceable[0]:
+                # print(replaceable[2])
                 rv = apply_on_corrections(replaceable[2], corrections)
                 if not rv:
                     corrections.append(replaceable[2])

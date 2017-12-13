@@ -7,6 +7,78 @@
             "in": "page1.text.div.1.head.1.s.1"
         },
         {
+            "id": "page1.text.div.5.p.2.s.2.w.1",
+            "text": "Van",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.2",
+            "text": "alle",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.3",
+            "text": "veroordeelde",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.4",
+            "text": "nazi-kopstukken",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.5",
+            "text": "was",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.6",
+            "text": "hij",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.7",
+            "text": "de",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.8",
+            "text": "enige",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.9",
+            "text": "die",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.10",
+            "text": "schuld",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.11",
+            "text": "bekende",
+            "space": false,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
+            "id": "page1.text.div.5.p.2.s.2.w.12",
+            "text": ".",
+            "space": true,
+            "in": "page1.text.div.5.p.2.s.2"
+        },
+        {
             "id": "page1.text.div.1.p.1.s.1.w.1",
             "text": "Albert",
             "space": true,
@@ -3899,78 +3971,6 @@
             "text": ".",
             "space": true,
             "in": "page1.text.div.5.p.2.s.1"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.1",
-            "text": "Van",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.2",
-            "text": "alle",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.3",
-            "text": "veroordeelde",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.4",
-            "text": "nazi-kopstukken",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.5",
-            "text": "was",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.6",
-            "text": "hij",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.7",
-            "text": "de",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.8",
-            "text": "enige",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.9",
-            "text": "die",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.10",
-            "text": "schuld",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.11",
-            "text": "bekende",
-            "space": false,
-            "in": "page1.text.div.5.p.2.s.2"
-        },
-        {
-            "id": "page1.text.div.5.p.2.s.2.w.12",
-            "text": ".",
-            "space": true,
-            "in": "page1.text.div.5.p.2.s.2"
         },
         {
             "id": "page1.text.div.5.p.2.s.3.w.1",
