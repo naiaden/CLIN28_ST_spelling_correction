@@ -278,7 +278,7 @@ def missing_words_window(ws):
 
 
 def action_in_sentence(sentence, correction):
-    print(correction)
+    print("AIS\t" + str(correction))
     if correction['class'] == "runonerror":
         for iter,id in enumerate(sentence):
             if id[0] == correction['span'][0]:
@@ -331,7 +331,7 @@ def apply_on_corrections(correction, corrections, sentence):
                 print("          : " + str(c))
                 if 'span' in c and c['span'][0] == f_id:
                     c['text'] = correction['text']
-                    print("          : UPD1 " + str(c))
+                    print("          :>" + str(c))
                     rv = True
 
                     for id in sentence:
@@ -343,11 +343,11 @@ def apply_on_corrections(correction, corrections, sentence):
                     break
                 if 'after' in c and c['after'] == ".".join(f_id.split(".")[0:-1]):
                     c['text'] = correction['text']
-                    print("          : UPD2 " + str(c))
+                    print("          :>" + str(c))
                     rv = True
 
                     for id in sentence:
-                        if id[0] == ".".join(f_id.split(".")[0:-1]):
+                        if id[0] == f_id:
                             id[1] = correction['text']
                             id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
                             break
@@ -407,7 +407,7 @@ def process(something):
                     local_corrections.append(replaceable[2])
                     #print(wip_sentence)
                     wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
-                    print([(x[0],x[1]) for x in wip_sentence])
+                    print("Process\t:" + str([(x[0],x[1]) for x in wip_sentence]))
                     #print(wip_sentence)
 
             split = split_errors_window(w)
@@ -445,8 +445,8 @@ for item in page1144_words:
         sentence.append(eos_filler)
         sentence.append(eos_filler)
         page_corrections += process(sentence)
-        if sent_iter > 1:
-            break
+        # if sent_iter > 1:
+        #     break
         sent_iter += 1
         sentence = []
         sentence.append(sos_filler)
@@ -463,5 +463,5 @@ page_corrections += process(sentence)
 pp = pprint.PrettyPrinter(indent=4)
 pp.pprint({'corrections': page_corrections, 'words': page1144_words})
 
-with open('/home/louis/Programming/COCOCLINSPCO/data/output/test3.json', 'w') as f:
+with open('/home/louis/Programming/COCOCLINSPCO/data/output/test4.json', 'w') as f:
     json.dump({'corrections': page_corrections, 'words': page1144_words}, f)
