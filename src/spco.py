@@ -320,32 +320,45 @@ def action_in_sentence(sentence, correction):
 
     return sentence
 
-def apply_on_corrections(correction, corrections):
+def apply_on_corrections(correction, corrections, sentence):
     rv = False
     if correction.get('superclass', "") == 'replace':
-        # print("-" + str(correction))
         if correction['span'][0].endswith("M"):
+            print("correction: " + str(correction))
             f_id = correction['span'][0]
 
             for c in corrections:
-                # print("--" + str(c))
+                print("          : " + str(c))
                 if 'span' in c and c['span'][0] == f_id:
-                    c['class'] = correction['class']
                     c['text'] = correction['text']
+                    print("          : UPD1 " + str(c))
                     rv = True
-                if 'after' in c and c['after'] == f_id:
-                    #c['class'] = correction['class']
+
+                    for id in sentence:
+                        if id[0] == f_id:
+                            id[1] = correction['text']
+                            id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
+                            break
+
+                    break
+                if 'after' in c and c['after'] == ".".join(f_id.split(".")[0:-1]):
                     c['text'] = correction['text']
+                    print("          : UPD2 " + str(c))
                     rv = True
-    return rv
+
+                    for id in sentence:
+                        if id[0] == ".".join(f_id.split(".")[0:-1]):
+                            id[1] = correction['text']
+                            id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
+                            break
+
+                    break
+    return (rv, sentence)
 
 correction_cache = {}
 
 def process(something):
-    id_list = " ".join([x[0] for x in something])
-    if id_list in correction_cache:
-        print(">>> From cache")
-        return correction_cache[id_list]
+
 
     string_sentence = " ".join([x[1] for x in something])
     wip_sentence = copy.copy(something)
@@ -361,45 +374,61 @@ def process(something):
         change = False
         temp_sent = copy.copy(wip_sentence)
         for w in window(temp_sent, 5):
+
+            # id_list = " ".join([x[0] for x in w]) + " ".join([x[1] for x in w])
+            # if id_list in correction_cache:
+            #     print(">>> From cache: no change")
+            #     break
+
+
+            local_corrections = []
+            local_change = False
+
+
+
             string_window = " ".join([x[1] for x in w])
             print("\t===" + string_window)
 
             # test if correction on correction
 
             runon = runon_errors_window(w)
-            change |= runon[0]
+            local_change |= runon[0]
             if runon[0]:
-                corrections.append(runon[2])
+                local_corrections.append(runon[2])
                 wip_sentence = action_in_sentence(wip_sentence, runon[2])
                 print([(x[0],x[1]) for x in wip_sentence])
 
             replaceable = replaceables_window(w)
-            change |= replaceable[0]
+            local_change |= replaceable[0]
             if replaceable[0]:
                 # print(replaceable[2])
-                rv = apply_on_corrections(replaceable[2], corrections)
+                (rv, wip_sentence) = apply_on_corrections(replaceable[2], corrections, wip_sentence)
                 if not rv:
-                    corrections.append(replaceable[2])
+                    local_corrections.append(replaceable[2])
                     #print(wip_sentence)
                     wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
                     print([(x[0],x[1]) for x in wip_sentence])
                     #print(wip_sentence)
 
             split = split_errors_window(w)
-            change |= split[0]
+            local_change |= split[0]
             if split[0]:
-                corrections.append(split[2])
+                local_corrections.append(split[2])
                 wip_sentence = action_in_sentence(wip_sentence, split[2])
                 print([(x[0],x[1]) for x in wip_sentence])
 
             missing = missing_words_window(w)
-            change |= missing[0]
+            local_change |= missing[0]
             if missing[0]:
-                corrections.append(missing[2])
+                local_corrections.append(missing[2])
                 wip_sentence = action_in_sentence(wip_sentence, missing[2])
                 print([(x[0],x[1]) for x in wip_sentence])
+
+            change |= local_change
+            corrections += local_corrections
+            # correction_cache[id_list] = local_change
         print("\nRESULT: " + " ".join([x[1] for x in wip_sentence]))
-    correction_cache[id_list] = corrections
+
     return corrections
 
 sent_iter = 1
@@ -416,7 +445,7 @@ for item in page1144_words:
         sentence.append(eos_filler)
         sentence.append(eos_filler)
         page_corrections += process(sentence)
-        if sent_iter > 2:
+        if sent_iter > 1:
             break
         sent_iter += 1
         sentence = []
@@ -434,5 +463,5 @@ page_corrections += process(sentence)
 pp = pprint.PrettyPrinter(indent=4)
 pp.pprint({'corrections': page_corrections, 'words': page1144_words})
 
-with open('/home/louis/Programming/COCOCLINSPCO/data/output/test2.json', 'w') as f:
+with open('/home/louis/Programming/COCOCLINSPCO/data/output/test3.json', 'w') as f:
     json.dump({'corrections': page_corrections, 'words': page1144_words}, f)
