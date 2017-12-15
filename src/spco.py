@@ -26,21 +26,35 @@ outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'#args.outputdir
 ## Global functions on colibricore.Pattern
 
 def ts(pattern):
+    """" Returns the string representation of the colibricore.Pattern argument. """
     return pattern.tostring(classdecoder)
 
 def oc(pattern):
+    """ Returns the occurrence count of the colibricore.Pattern argument in the training data. """
     return model.occurrencecount(pattern)
 
 def fr(pattern):
+    """ 
+    Returns the frequency of the colibricore.Pattern argument in the training data.
+    The frequency is the normalized occurrence count for the length (order) of the argument.
+     """
     return model.frequency(pattern)
+
+def bp(string):
+    """
+    Returns the colibripattern.Pattern representation of string.
+    """
+    return classencoder.buildpattern(string)
 
 ######################
 ## Global functions on other stuff
 
-def id(folia_id):
+def fid(folia_id):
+    """ Returns the folia document id and its specifiers up to sentence level of a folia id string representation. """
     return folia_id.split(".w.")[0]
 
 def window(iterable, size=2):
+    """ Generator for a sliding window over iterable with given size. """
     i = iter(iterable)
     win = []
     for e in range(0, size):
@@ -71,8 +85,6 @@ else:
 ######################
 ## Run the game
 
-# add stuff to encoder? Nah!
-
 import json
 # page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
 page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/validation/page1.json'))
@@ -87,6 +99,7 @@ eos_filler = ['id-not-available', '</s>', classencoder.buildpattern(" "), True, 
 ## Correction units
 
 def is_year(number):
+    """ A simple function to test if the input (string or number) is a year (between 1750 and 2100). """
     try:
         number = int(number)
         return number > 1750 and number < 2100
@@ -94,6 +107,10 @@ def is_year(number):
             return False;
 
 def number_to_text(number):
+    """ 
+    No longer necessary for the shared task; this function converts an integer
+    to its lexical string representation if this is according to the rules of OnzeTaal
+    (https://onzetaal.nl/taaladvies/getallen-in-letters-of-cijfers/). """
     try:
         if number >=0 and number <= 20:
             return ["nul", "een", "twee", "drie", "vier", "vijf", "zes", "zeven",
@@ -114,9 +131,24 @@ def number_to_text(number):
         return number;
 
 
-# archaic, non-word and confusables:
-# Compare frequency of (a b c d e) with (a b X d e)
 def replaceables_window(ws):
+    """
+    This function tries to find a replaceable in the window 'a b c d e' for word 'c'.
+    It creates a correction with the superclass 'replace', and more specific classes
+    such as 'capitalizationerror', 'redundantpunctuation', 'nonworderror' and the wildcard
+    'replace'. It implicitely also finds archaic and confuseables, but there are shared
+    under the class 'replace'.
+    
+    It follows a backoff strategy, where it starts with window size 5, 2 on the left, 2 on 
+    the right. If there is not a word 'c'' with a higher frequency, then it backs off to 
+    a 3 word window. Analoguously it finally also tries if a word without context might be
+    a better fit if the word 'c' seems to be out-of-vocabulary.
+    
+    Returns a triple (r1, r2, r3) where
+        r1 = a correction has been found,
+        r2 = the 'new' window, with word 'c' being replaced,
+        r3 = the correction.
+    """
     words = [w[1] for w in ws]
 
     something_happened = False
@@ -182,8 +214,17 @@ def replaceables_window(ws):
     correction['text'] = best_w
     return (something_happened and best_s != " ".join(words), best_s, correction)
 
-# Compare frequency of (a b cd e f) with (a b c d e f)
 def runon_errors_window(ws):
+    """
+    This function tries to find runon errors in the window 'a b c d e' for the words
+    'c' and 'd'. If the frequency of 'cd' is higher than 'c d' (notice the the order
+    of the window is now different), it replaces 'c d' with 'cd'.
+    
+    Returns a triple (r1, r2, r3) where
+        r1 = a correction has been found,
+        r2 = the 'new' window, with word 'c d' being replaced for 'cd',
+        r3 = the correction.
+    """
     words = [w[1] for w in ws]
 
     something_happened = False
@@ -213,8 +254,19 @@ def runon_errors_window(ws):
     correction['text'] = best_candidate
     return (something_happened, best_s, correction)
 
-# Compare frequency of (a b c d e) with (a b cd e)
 def split_errors_window(ws):
+    """
+    This function tries to find split errors in the window 'a b cd e' for the words
+    'c' and 'd'. If the frequency of 'c d' is higher than 'cd' (notice the the order
+    of the window is now different), it replaces 'c d' with 'cd'. The space is
+    inserted on all possible places, and the best match is choosen to be candidate
+    for the correction
+    
+    Returns a triple (r1, r2, r3) where
+        r1 = a correction has been found,
+        r2 = the 'new' window, with word 'cd' being replaced for 'c d',
+        r3 = the correction.
+    """
     words = [w[1] for w in ws]
 
     something_happened = False
@@ -244,6 +296,16 @@ def split_errors_window(ws):
     return (something_happened, best_s, correction)
 
 def missing_words_window(ws):
+    """
+    This function tries to find a missing word in the window 'a b c d e' after the
+    word 'c'. If the frequency of 'c f d' is higher than 'c d' (notice that the order
+    of the window is now different), it inserts 'f' after 'c'.
+    
+    Returns a triple (r1, r2, r3) where
+        r1 = a correction has been found,
+        r2 = the 'new' window, with word 'f' being inserted after 'c',
+        r3 = the correction.
+    """
     words = [w[1] for w in ws]
 
     # at most 1 insertion
@@ -278,6 +340,11 @@ def missing_words_window(ws):
 
 
 def action_in_sentence(sentence, correction):
+    """
+    This function tries to apply a correction on the sentence.
+    
+    Returns the corrected sentence.
+    """
     print("AIS\t" + str(correction))
     if correction['class'] == "runonerror":
         for iter,id in enumerate(sentence):
@@ -321,6 +388,30 @@ def action_in_sentence(sentence, correction):
     return sentence
 
 def apply_on_corrections(correction, corrections, sentence):
+    """
+    This function checks whether a correction is due to be applied on
+    another correction, in which case it will try to gracefully handle
+    the situation by updating the previous correction (with the word,
+    not a new correction class).
+    
+    Returns a tuple (r1, r2) where
+        r1 = the correction has been applied on another correction,
+        r2 = the updated sentence.
+        
+        
+    >>> correction = {'class': 'spliterror', 'span': ['page1.text.div.4.p.1.s.2.w.18', 'page1.text.div.4.p.1.s.2.w.18.47M'], 'text': 'zonet'}    
+    >>> corrections = [{'class': 'missingword', 'after': 'page1.text.div.4.p.1.s.2.w.18', 'text': 'net'}]
+    >>> sentence = [['page1.text.div.4.p.1.s.2.w.16', 'en', bp('en'), True, 'page1.text.div.4.p.1.s.2'], 
+                    ['page1.text.div.4.p.1.s.2.w.17', 'wist', bp('wist'), True, 'page1.text.div.4.p.1.s.2'], 
+                    ['page1.text.div.4.p.1.s.2.w.18', 'zo', bp('zo'), True, 'page1.text.div.4.p.1.s.2'], 
+                    ['page1.text.div.4.p.1.s.2.w.18.47M', 'net', bp('net'), True, 'page1.text.div.4.p.1.s.2'], 
+                    ['page1.text.div.4.p.1.s.2.w.19', 'de', bp('de'), True, 'page1.text.div.4.p.1.s.2']]
+    >>> apply_on_corrections(c1, C1, s1)
+    (True, [['page1.text.div.4.p.1.s.2.w.16', 'en', <colibricore.Pattern at 0x7f253cf80b70>, True, 'page1.text.div.4.p.1.s.2'],
+            ['page1.text.div.4.p.1.s.2.w.17', 'wist', <colibricore.Pattern at 0x7f253cf809d0>, True, 'page1.text.div.4.p.1.s.2'],
+            ['page1.text.div.4.p.1.s.2.w.18', 'zonet', <colibricore.Pattern at 0x7f253cf80950>, True, 'page1.text.div.4.p.1.s.2'], 
+            ['page1.text.div.4.p.1.s.2.w.19', 'de', <colibricore.Pattern at 0x7f253cf80270>, True, 'page1.text.div.4.p.1.s.2']])
+    """  
     rv = False
     if correction.get('superclass', "") == 'replace':
         if correction['span'][0].endswith("M"):
@@ -353,9 +444,26 @@ def apply_on_corrections(correction, corrections, sentence):
                             break
 
                     break
+    if correction['class'] == 'spliterror':
+        if fid(correction['span'][0]) == fid(correction['span'][1]) and correction['span'][1].endswith("M"):
+            
+            for iter, wid in enumerate(sentence):
+                print(wid)
+                if wid[0] == correction['span'][0]:
+#                    print("--" + str(wid))                    
+                    wid[1] = correction['text']
+                    wid[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
+                    
+                    rv = True
+                if  wid[0] == correction['span'][1]:
+#                    print(">>" + str(wid) + "\t\t(" + str(iter) + ")")
+                    break
+            if sentence[iter][0].endswith("M"):
+                del sentence[iter]
     return (rv, sentence)
 
 correction_cache = {}
+correction_cache_words = {}
 
 def process(something):
 
@@ -363,9 +471,12 @@ def process(something):
     string_sentence = " ".join([x[1] for x in something])
     wip_sentence = copy.copy(something)
 
-
+    
 
     corrections = []
+#    if something[3][4] != 'page1.text.div.4.p.1.s.2':
+#        print("ignoring " + str(something[3][4]))
+#        return corrections
 
     change = True
 
@@ -374,11 +485,27 @@ def process(something):
         change = False
         temp_sent = copy.copy(wip_sentence)
         for w in window(temp_sent, 5):
+#            print(wip_sentence)
 
-            # id_list = " ".join([x[0] for x in w]) + " ".join([x[1] for x in w])
-            # if id_list in correction_cache:
-            #     print(">>> From cache: no change")
-            #     break
+            id_word_list = " ".join([x[0] for x in w]) + " ".join([x[1] for x in w])
+            word_list = " ".join([x[1] for x in w])
+            id_list = " ".join([x[0] for x in w])
+            
+            
+            string_window = " ".join([x[1] for x in w])
+            
+            if correction_cache.get(id_word_list, False):
+                print(">>> from cache: no change for [" + string_window + "]")
+                continue
+
+            if w[2][1] in correction_cache_words.get(id_list, []):
+                print(">>> from cache: weer/meer for [" + string_window + "]: " + str(correction_cache_words.get(id_list, [])))
+                continue
+            
+            if " ".join([x[0] for x in w]) not in correction_cache_words:
+                correction_cache_words[id_list] = []
+            
+            correction_cache_words[id_list].append(w[2][1])
 
 
             local_corrections = []
@@ -386,8 +513,8 @@ def process(something):
 
 
 
-            string_window = " ".join([x[1] for x in w])
-            print("\t===" + string_window)
+#            string_window = " ".join([x[1] for x in w])
+            print("--- " + string_window)
 
             # test if correction on correction
 
@@ -413,20 +540,29 @@ def process(something):
             split = split_errors_window(w)
             local_change |= split[0]
             if split[0]:
-                local_corrections.append(split[2])
-                wip_sentence = action_in_sentence(wip_sentence, split[2])
-                print([(x[0],x[1]) for x in wip_sentence])
+                (rv, wip_sentence) = apply_on_corrections(split[2], corrections, wip_sentence)
+                if not rv:
+                    local_corrections.append(split[2])
+                    wip_sentence = action_in_sentence(wip_sentence, split[2])
+                    print([(x[0],x[1]) for x in wip_sentence])
 
             missing = missing_words_window(w)
             local_change |= missing[0]
             if missing[0]:
-                local_corrections.append(missing[2])
-                wip_sentence = action_in_sentence(wip_sentence, missing[2])
-                print([(x[0],x[1]) for x in wip_sentence])
+                (rv, wip_sentence) = apply_on_corrections(missing[2], corrections, wip_sentence)
+                if not rv:
+                    local_corrections.append(missing[2])
+                    wip_sentence = action_in_sentence(wip_sentence, missing[2])
+                    print([(x[0],x[1]) for x in wip_sentence])
 
             change |= local_change
             corrections += local_corrections
-            # correction_cache[id_list] = local_change
+            
+#            if not local_change:
+#                print("NO LOCAL CHANGE! for " + id_word_list)
+            
+            correction_cache[id_word_list] = not local_change
+            
         print("\nRESULT: " + " ".join([x[1] for x in wip_sentence]))
 
     return corrections
