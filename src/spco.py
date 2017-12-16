@@ -26,23 +26,39 @@ outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'#args.outputdir
 ## Global functions on colibricore.Pattern
 
 def ts(pattern):
-    """" Returns the string representation of the colibricore.Pattern argument. """
+    """" 
+    Returns the string representation of the colibricore.Pattern argument.
+    
+    >>> ts(bp("patroon"))
+    'patroon'
+    """
     return pattern.tostring(classdecoder)
 
 def oc(pattern):
-    """ Returns the occurrence count of the colibricore.Pattern argument in the training data. """
+    """ 
+    Returns the occurrence count of the colibricore.Pattern argument in the training data.
+    
+    >>> oc(bp("patroon"))
+    170
+    """
     return model.occurrencecount(pattern)
 
 def fr(pattern):
     """ 
     Returns the frequency of the colibricore.Pattern argument in the training data.
     The frequency is the normalized occurrence count for the length (order) of the argument.
+    
+    >>> fr(bp("patroon"))
+    1.4490891920364536e-05
      """
     return model.frequency(pattern)
 
 def bp(string):
     """
     Returns the colibripattern.Pattern representation of string.
+    
+    >>> bp("patroon")
+    <colibricore.Pattern at 0x7f253cf1eab0>
     """
     return classencoder.buildpattern(string)
 
@@ -50,11 +66,31 @@ def bp(string):
 ## Global functions on other stuff
 
 def fid(folia_id):
-    """ Returns the folia document id and its specifiers up to sentence level of a folia id string representation. """
+    """ 
+    Returns the folia document id and its specifiers up to sentence level of a folia id string representation. 
+    
+    >>> fid("page1.text.div.2.p.3.s.4.w.1")
+    page1.text.div.2.p.3.s.4
+    
+    >>> fid("page1.text.div.2.p.3.s.4")
+    page1.text.div.2.p.3.s.4
+    """
     return folia_id.split(".w.")[0]
 
 def window(iterable, size=2):
-    """ Generator for a sliding window over iterable with given size. """
+    """ 
+    Generator for a sliding window over iterable with given size.
+    Assumes that len(iterable) > size 
+    
+    >>> for w in window([1,2,3,4,5,6], 5):
+            print(w)
+    [1, 2, 3, 4, 5]
+    [2, 3, 4, 5, 6]
+
+    >>> for w in window([1,2,3], 5):
+            print(w)
+    DeprecationWarning: generator 'window' raised StopIteration
+    """
     i = iter(iterable)
     win = []
     for e in range(0, size):
@@ -65,6 +101,51 @@ def window(iterable, size=2):
         yield win
 
 punct_translator = str.maketrans('', '', string.punctuation)
+
+######################
+## Test
+
+def create_sentence(string, in_id="page1.text.div.1.p.1.s.1"):
+    """
+    Returns a test sentence as used by the task. An optional "in" completes the sentence.
+    
+    >>> create_sentence(['Dit', 'is', 'maar', 'een', 'paar', 'woorden', '.'], "page1.text.div.2.p.3.s.4")
+    [{'id': 'page1.text.div.2.p.3.s.4.w.1', 'in': 'page1.text.div.2.p.3.s.4', 'space': True, 'text': 'Dit'},
+     {'id': 'page1.text.div.2.p.3.s.4.w.2', 'in': 'page1.text.div.2.p.3.s.4', 'space': True, 'text': 'is'},
+     {'id': 'page1.text.div.2.p.3.s.4.w.3', 'in': 'page1.text.div.2.p.3.s.4', 'space': True, 'text': 'maar'},
+     {'id': 'page1.text.div.2.p.3.s.4.w.4', 'in': 'page1.text.div.2.p.3.s.4', 'space': True, 'text': 'een'},
+     {'id': 'page1.text.div.2.p.3.s.4.w.5', 'in': 'page1.text.div.2.p.3.s.4', 'space': True, 'text': 'paar'},
+     {'id': 'page1.text.div.2.p.3.s.4.w.6', 'in': 'page1.text.div.2.p.3.s.4', 'space': True, 'text': 'woorden'},
+     {'id': 'page1.text.div.2.p.3.s.4.w.7', 'in': 'page1.text.div.2.p.3.s.4', 'space': True, 'text': '.'}]
+    """
+    sentence = []
+    for i, w in enumerate(string):
+        sentence.append({'id': in_id + '.w.' + str(i+1), 'text': w, 'space': True, 'in': in_id})
+    return sentence
+
+def create_internal_sentence(sentence):
+    """
+    Returns a test sentence in the interal structure based on a sentence, 
+    with a colibricore.Pattern representation of the token.
+    
+    >>> create_internal_sentence(create_sentence(['Dit', 'is', 'maar', 'een', 'paar', 'woorden', '.'], "page1.text.div.2.p.3.s.4"))
+    [['page1.text.div.5.p.2.s.1.w.1', 'Speer', <colibricore.Pattern at 0x7f253cf1e470>, True, 'page1.text.div.5.p.2.s.1'], 
+     ['page1.text.div.5.p.2.s.1.w.2', 'bij', <colibricore.Pattern at 0x7f253cf1e8d0>, True, 'page1.text.div.5.p.2.s.1'], 
+     ['page1.text.div.5.p.2.s.1.w.3', 'de', <colibricore.Pattern at 0x7f253cf1e050>, True, 'page1.text.div.5.p.2.s.1'], 
+     ['page1.text.div.5.p.2.s.1.w.4', 'processen', <colibricore.Pattern at 0x7f253cf1e7b0>, True, 'page1.text.div.5.p.2.s.1'],
+     ['page1.text.div.5.p.2.s.1.w.5', 'van', <colibricore.Pattern at 0x7f253cf1e8f0>, True, 'page1.text.div.5.p.2.s.1'], 
+     ['page1.text.div.5.p.2.s.1.w.6', 'Neurenberg', <colibricore.Pattern at 0x7f253cf1e450>, True, 'page1.text.div.5.p.2.s.1'],
+     ['page1.text.div.5.p.2.s.1.w.7', 'veroordeeld', <colibricore.Pattern at 0x7f253cf1e9d0>, True, 'page1.text.div.5.p.2.s.1']]
+    """
+    internal_sentence = []
+    for w in sentence:
+        internal_sentence.append([w['id'],
+                                  w['text'],
+                                  bp(w['text']),
+                                  w['space'],
+                                  w['in']])
+    return internal_sentence
+        
 
 ######################
 ## Set the stage
@@ -148,6 +229,12 @@ def replaceables_window(ws):
         r1 = a correction has been found,
         r2 = the 'new' window, with word 'c' being replaced,
         r3 = the correction.
+        
+    >>> wss = create_internal_sentence(create_sentence("Speer bij de processen van Neurenberg".split(), 'page1.text.div.5.p.2.s.1'))
+    >>> for w in window(wss, 5):
+            print(replaceables_window(w))
+    (False, 'Speer bij de processen van', {'superclass': 'replace', 'class': 'capitalizationerror', 'span': ['page1.text.div.5.p.2.s.1.w.3'], 'text': 'de'})
+    (True, 'bij de Processen van Neurenberg', {'superclass': 'replace', 'class': 'capitalizationerror', 'span': ['page1.text.div.5.p.2.s.1.w.4'], 'text': 'Processen'})
     """
     words = [w[1] for w in ws]
 
@@ -465,6 +552,9 @@ def apply_on_corrections(correction, corrections, sentence):
 correction_cache = {}
 correction_cache_words = {}
 
+#only_sentence = ''
+only_sentence = 'page1.text.div.5.p.2.s.1'
+
 def process(something):
 
 
@@ -474,9 +564,9 @@ def process(something):
     
 
     corrections = []
-#    if something[3][4] != 'page1.text.div.4.p.1.s.2':
+    if only_sentence and something[3][4] != only_sentence:
 #        print("ignoring " + str(something[3][4]))
-#        return corrections
+        return corrections
 
     change = True
 
