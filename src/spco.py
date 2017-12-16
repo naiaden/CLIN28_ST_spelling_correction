@@ -10,17 +10,27 @@ import argparse
 
 import random
 
+import sys
+
 argparser = argparse.ArgumentParser(description="Spelling correction based on 5-grams.", epilog="Developed for the CLIN28 shared task on spelling correction for contemporary Dutch. Reach me at louis@naiaden.nl for questions or visit https://github.com/naiaden/COCOCLINSPCO/")
 argparser.add_argument('classfile', help="encoded classes")
 argparser.add_argument('datafile', help="encoded data")
 argparser.add_argument('modelfile', help="(un)indexed pattern model")
 argparser.add_argument('outputdir', help="output directory")
-#args, unknownargs = argparser.parse_known_args()
+args, unknown_args = argparser.parse_known_args()
 
-classfile = '/home/louis/Data/corpus/small.colibri.cls'#args.classfile
-datafile = '/home/louis/Data/corpus/small.colibri.dat'#args.datafile
-modelfile = '/home/louis/Data/corpus/small.colibri.model'#args.modelfile
-outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'#args.outputdir
+if not unknown_args:
+    print("Missing input files. \n A B O R T")
+    sys.exit()
+
+classfile = args.classfile
+#classfile = '/home/louis/Data/corpus/small.colibri.cls'
+datafile = args.datafile
+#datafile = '/home/louis/Data/corpus/small.colibri.dat'
+modelfile = args.modelfile
+#modelfile = '/home/louis/Data/corpus/small.colibri.model'
+outputdir = args.outputdir
+#outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'
 
 ######################
 ## Global functions on colibricore.Pattern
@@ -168,7 +178,8 @@ else:
 
 import json
 # page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/test/pagesmall.json'))
-page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/validation/page1.json'))
+#page1144 = json.load(open('/home/louis/Programming/COCOCLINSPCO/data/validation/page1.json'))
+page1144 = json.load(open(unknown_args[0]))
 page1144_corrections = page1144['corrections']
 page1144_words = page1144['words']
 
