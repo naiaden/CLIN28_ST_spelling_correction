@@ -311,6 +311,12 @@ def runon_errors_window(ws):
         r1 = a correction has been found,
         r2 = the 'new' window, with word 'c d' being replaced for 'cd',
         r3 = the correction.
+    
+    >>> wss = create_internal_sentence(create_sentence("in de wapenindustrie tewerk waren gesteld".split(), 'page1.text.div.5.p.2.s.1'))
+    >>> for w in window(wss, 5):
+            print(runon_errors_window(w))
+    (False, <colibricore.Pattern object at 0x7f253d1c6790>, {'class': 'runonerror', 'span': ['page1.text.div.5.p.2.s.1.w.3'], 'text': 'wapenindustrie'})
+    (True, 'de wapenindustrie te werk waren gesteld', {'class': 'runonerror', 'span': ['page1.text.div.5.p.2.s.1.w.4'], 'text': 'te werk'})
     """
     words = [w[1] for w in ws]
 
@@ -353,6 +359,13 @@ def split_errors_window(ws):
         r1 = a correction has been found,
         r2 = the 'new' window, with word 'cd' being replaced for 'c d',
         r3 = the correction.
+        
+    >>> wss = create_internal_sentence(create_sentence("tot 10 jaar gevangenisstraf , voornamelijk".split(), 'page1.text.div.5.p.2.s.1'))
+    >>> for w in window(wss, 5):
+            print(split_errors_window(w))
+    (False, <colibricore.Pattern object at 0x7f253d1c6e30>, {'class': 'spliterror', 'span': '', 'text': 'jaar gevangenisstraf'})
+    (True, '10 jaar gevangenisstraf, voornamelijk', {'class': 'spliterror', 'span': ['page1.text.div.5.p.2.s.1.w.4', 'page1.text.div.5.p.2.s.1.w.5'], 'text': 'gevangenisstraf,'})
+
     """
     words = [w[1] for w in ws]
 
