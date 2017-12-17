@@ -173,6 +173,12 @@ else:
     model.train(datafile, options)
     model.write(modelfile)
 
+# This turns out to be faster than set or frozenset
+# However, it is mutable, so do not change
+all_words = []
+for w,c in model.filter(1, size=1):
+    all_words.append(w)
+
 ######################
 ## Run the game
 
@@ -261,7 +267,7 @@ def replaceables_window(ws):
         return (False, best_s, {})
 
     # 2-2 word context
-    for word,count in model.filter(1, size=1):
+    for word in all_words:
         if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
             a_b_X_d_e = " ".join(words[0:2]) + " " + ts(word) + " " + " ".join(words[3:5])
             #print(a_b_X_d_e)
@@ -274,7 +280,7 @@ def replaceables_window(ws):
 
     # 1-1 word context
     if not something_happened:
-        for word,count in model.filter(1, size=1):
+        for word in all_words:
             if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
                 a_b_X_d_e = " ".join(words[1:2]) + " " + ts(word) + " " + " ".join(words[3:4])
                 p_a_b_X_d_e = classencoder.buildpattern(a_b_X_d_e)
@@ -288,7 +294,7 @@ def replaceables_window(ws):
 
     # no context
     if not something_happened and not model.occurrencecount(ws[2][2]):
-        for word,count in model.filter(1, size=1):
+        for word in all_words:
             if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
                 f = fr(word);
                 if f > best_f:
@@ -429,7 +435,7 @@ def missing_words_window(ws):
     best_f = fr(best_s)
     best_w = ""
     #
-    for word,count in model.filter(1, size=1):
+    for word in all_words:
         if not word.unknown():
             a_b_c_X_d_e = " ".join(words[0:3]) + " " + ts(word) + " " + " ".join(words[3:4])
             p_a_b_c_X_d_e = classencoder.buildpattern(a_b_c_X_d_e)
