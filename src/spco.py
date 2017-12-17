@@ -269,12 +269,12 @@ def replaceables_window(ws):
     # 2-2 word context
     for word in all_words:
         if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
-            a_b_X_d_e = " ".join(words[0:2]) + " " + ts(word) + " " + " ".join(words[3:5])
-            #print(a_b_X_d_e)
-            p_a_b_X_d_e = classencoder.buildpattern(a_b_X_d_e)
-            if fr(p_a_b_X_d_e) > best_f:
+            a_b_X_d_e = " ".join(words[0:2] + [ts(word)] + words[3:5])
+            p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
+
+            if f_a_b_X_d_e > best_f:
                 something_happened = True
-                best_f = fr(p_a_b_X_d_e)
+                best_f = f_a_b_X_d_e
                 best_s = a_b_X_d_e
                 best_w = ts(word)
 
@@ -282,11 +282,12 @@ def replaceables_window(ws):
     if not something_happened:
         for word in all_words:
             if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
-                a_b_X_d_e = " ".join(words[1:2]) + " " + ts(word) + " " + " ".join(words[3:4])
-                p_a_b_X_d_e = classencoder.buildpattern(a_b_X_d_e)
-                if fr(p_a_b_X_d_e) > best_f:
+                a_b_X_d_e = " ".join(words[1:2] + [ts(word)] + words[3:4])               
+                p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
+                
+                if f_a_b_X_d_e > best_f:
                     something_happened = True
-                    best_f = fr(p_a_b_X_d_e)
+                    best_f = f_a_b_X_d_e
                     best_s = a_b_X_d_e
                     best_w = ts(word)
         if something_happened:
@@ -317,6 +318,23 @@ def replaceables_window(ws):
     correction['span'] = [ws[2][0]]
     correction['text'] = best_w
     return (something_happened and best_s != " ".join(words), best_s, correction)
+
+def pf_from_cache(candidate):
+    """
+    If candidate is already in the pattern-frequency cache, then retrieve its
+    colibricore.Pattern representation and its frequency. Otherwise compute the
+    values and put it in the cache first.
+    
+    >>> pf_from_cache("patroon")
+    (<colibricore.Pattern at 0x7f253d1c68d0>, 1.4490891920364536e-05)
+    """
+    if False and candidate in p_cache:
+        (p_candidate, f_candidate) = p_cache[candidate]
+    else:
+        p_candidate = classencoder.buildpattern(candidate)
+        f_candidate = fr(p_candidate)
+        #p_cache[candidate] = (p_candidate, f_candidate)
+    return (p_candidate, f_candidate)
 
 def runon_errors_window(ws):
     """
@@ -349,19 +367,15 @@ def runon_errors_window(ws):
         candidate = copy.copy(middle)
         candidate = '{0} {1}'.format(candidate[:x], candidate[x:])
 
-        p_candidate = classencoder.buildpattern(candidate)
-        # print(candidate + "\t" + str(fr(p_candidate)))
-        f_candidate = fr(p_candidate)
+        p_candidate, f_candidate = pf_from_cache(candidate)
+        
         if f_candidate > best_f:# and s_candidate.strip().split(" "):
             something_happened = True
             best_f = f_candidate
-            best_s = ws[0][1] + " " + ws[1][1] + " " + candidate + " " + ws[3][1] + " " + ws[4][1]
+            best_s = " ".join(ws[0][1] + ws[1][1] + candidate + ws[3][1] + ws[4][1])
             best_candidate = candidate
 
-    correction = {}
-    correction['class'] = "runonerror"
-    correction['span'] = [ws[2][0]]
-    correction['text'] = best_candidate
+    correction = {'class': "runonerror", 'span': [ws[2][0]], 'text': best_candidate}
     return (something_happened, best_s, correction)
 
 def split_errors_window(ws):
@@ -392,12 +406,10 @@ def split_errors_window(ws):
     best_candidate = ws[2][1] + " " + ws[3][1]
     best_f = fr(classencoder.buildpattern(best_candidate))
     best_span = ""
-    # print(best_candidate + "\t" + str(best_f))
 
     a_b_cd_e = ws[2][1]+ws[3][1]
-    p_a_b_cd_e = classencoder.buildpattern(a_b_cd_e)
-    f_a_b_cd_e = fr(p_a_b_cd_e)
-    # print(a_b_cd_e + "\t" + str(f_a_b_cd_e) + "\t" + str(oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1]))))
+   
+    p_a_b_cd_e, f_a_b_cd_e = pf_from_cache(a_b_cd_e)
 
     if f_a_b_cd_e > best_f:# and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
         something_happened = True
@@ -406,11 +418,12 @@ def split_errors_window(ws):
         best_candidate = ws[2][1] + ws[3][1]
         best_span = [ws[2][0],ws[3][0]]
 
-    correction = {}
-    correction['class'] = "spliterror"
-    correction['span'] = best_span
-    correction['text'] = best_candidate
+    correction = {'class': "spliterror", 'span': best_span, 'text': best_candidate}
     return (something_happened, best_s, correction)
+
+
+p_cache = {}
+
 
 def missing_words_window(ws):
     """
@@ -431,26 +444,26 @@ def missing_words_window(ws):
 
     something_happened = False
     #
-    best_s = classencoder.buildpattern(" ".join(words))
+    joinwords = " ".join(words)
+    best_s = classencoder.buildpattern(joinwords)
     best_f = fr(best_s)
     best_w = ""
+
     #
     for word in all_words:
         if not word.unknown():
-            a_b_c_X_d_e = " ".join(words[0:3]) + " " + ts(word) + " " + " ".join(words[3:4])
-            p_a_b_c_X_d_e = classencoder.buildpattern(a_b_c_X_d_e)
-            f_a_b_c_X_d_e = fr(p_a_b_c_X_d_e)
+            tsword = ts(word)
+            a_b_c_X_d_e = " ".join(words[0:3] +[tsword] + words[3:4])
+            p_a_b_c_X_d_e, f_a_b_c_X_d_e = pf_from_cache(a_b_c_X_d_e)
+                
             if f_a_b_c_X_d_e > best_f:
                 something_happened = True
                 best_f = f_a_b_c_X_d_e
                 best_s = a_b_c_X_d_e
-                best_w = ts(word)
+                best_w = tsword
         # backoff option?
-    correction = {}
-    correction['class'] = "missingword"
-    correction['after'] = ws[2][0]
-    correction['text'] = best_w
-    return (something_happened and best_s != " ".join(words), best_s, correction)
+    correction = {'class': "missingword", 'after': ws[2][0], 'text': best_w}
+    return (something_happened and best_s != joinwords, best_s, correction)
 
 
 
@@ -582,8 +595,8 @@ def apply_on_corrections(correction, corrections, sentence):
 correction_cache = {}
 correction_cache_words = {}
 
-#only_sentence = ''
-only_sentence = 'page1.text.div.5.p.2.s.1'
+only_sentence = ''
+#only_sentence = 'page1.text.div.5.p.2.s.1'
 
 def process(something):
 
