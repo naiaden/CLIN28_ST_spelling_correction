@@ -576,8 +576,8 @@ def apply_on_corrections(correction, corrections, sentence):
 correction_cache = {}
 correction_cache_words = {}
 
-#only_sentence = ''
-only_sentence = 'page1.text.div.5.p.2.s.1'
+only_sentence = ''
+#only_sentence = 'page1.text.div.5.p.2.s.1'
 
 def process(something):
 
