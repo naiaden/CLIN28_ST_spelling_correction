@@ -157,6 +157,8 @@ def create_internal_sentence(sentence):
     return internal_sentence
         
 
+
+
 ######################
 ## Set the stage
 
@@ -369,7 +371,7 @@ def runon_errors_window(ws):
 
         p_candidate, f_candidate = pf_from_cache(candidate)
         
-        if f_candidate > best_f:# and s_candidate.strip().split(" "):
+        if f_candidate > best_f  and not bp(candidate[:x]).unknown() and not bp(candidate[x:]).unknown()::# and s_candidate.strip().split(" "):
             something_happened = True
             best_f = f_candidate
             best_s = " ".join(ws[0][1] + ws[1][1] + candidate + ws[3][1] + ws[4][1])
@@ -411,7 +413,7 @@ def split_errors_window(ws):
    
     p_a_b_cd_e, f_a_b_cd_e = pf_from_cache(a_b_cd_e)
 
-    if f_a_b_cd_e > best_f:# and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
+    if not p_a_b_cd_e.unknown() and f_a_b_cd_e > best_f:# and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
         something_happened = True
         best_f = f_a_b_cd_e
         best_s = ws[0][1] + " " + ws[1][1] + " " + ws[2][1]+ws[3][1] + " " + ws[4][1]
