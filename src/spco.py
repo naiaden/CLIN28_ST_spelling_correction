@@ -371,7 +371,7 @@ def runon_errors_window(ws):
 
         p_candidate, f_candidate = pf_from_cache(candidate)
         
-        if f_candidate > best_f  and not bp(candidate[:x]).unknown() and not bp(candidate[x:]).unknown()::# and s_candidate.strip().split(" "):
+        if f_candidate > best_f  and not bp(candidate[:x]).unknown() and not bp(candidate[x:]).unknown():# and s_candidate.strip().split(" "):
             something_happened = True
             best_f = f_candidate
             best_s = " ".join(ws[0][1] + ws[1][1] + candidate + ws[3][1] + ws[4][1])
