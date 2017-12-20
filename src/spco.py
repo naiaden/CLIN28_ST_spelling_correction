@@ -277,7 +277,8 @@ def replaceables_window(ws):
     best_f = fr(best_s)
     best_w = c
 
-    if is_year(c):
+    # Do not convert 2,5 into 25
+    if is_year(c) or c.translate(punct_translator).isdigit():
         return (False, best_s, {})
 
     local_threshold = replace_threshold
@@ -293,24 +294,20 @@ def replaceables_window(ws):
                 best_f = f_a_b_X_d_e
                 best_s = a_b_X_d_e
                 best_w = ts(word)
+                print("nee")
+
+    
 
     # 1-1 word context
     if not something_happened:
+        best_f = fr(" ".join(words[1:4]))
+        print(str(best_f) + "\t" + " ".join(words[1:4]))
         for word in all_words:
             if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
                 a_b_X_d_e = " ".join(words[1:2] + [ts(word)] + words[3:4])               
                 p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
-                
-                try:
-                    local_threshold = fr(" ".join(words[0:2] + [ts(word)] + words[3:5]))/fr(" ".join(words[0:5]))
-                    #if ts(word) == "net" or ts(word) == "niet":
-                    #    print(ts(word) + str(local_threshold))
-                except ZeroDivisionError:
-                    local_threshold = replace_threshold
-                #if ts(word) == "net" or ts(word) == "niet":
-                #        print(ts(word) + str(local_threshold))
-                
-                if f_a_b_X_d_e*local_threshold > best_f:
+                               
+                if f_a_b_X_d_e/local_threshold > best_f and fr(" ".join(words[1:2] + [ts(word)] + words[3:5])) >= fr(" ".join(words[1:5])):
                     something_happened = True
                     best_f = f_a_b_X_d_e
                     best_s = a_b_X_d_e
@@ -330,9 +327,7 @@ def replaceables_window(ws):
         if something_happened:
             best_s = ws[0][1] + " " + ws[1][1] + " " + best_w + " " + ws[3][1] + " " + ws[4][1]
     
-    # Do not convert 2,5 into 25
-    if c.translate(punct_translator).isdigit():
-        something_happened = False
+
 
     correction = {}
     correction['superclass'] = "replace"
@@ -432,11 +427,11 @@ def split_errors_window(ws):
     something_happened = False
 
     best_s = bp(" ".join(words))
-    best_candidate = ws[2][1] + " " + ws[3][1]
+    best_candidate = ws[2][1] + " " + ws[3][1] + " " + ws[4][1]
     best_f = fr(best_candidate)
     best_span = ""
 
-    a_b_cd_e = ws[2][1]+ws[3][1]
+    a_b_cd_e = ws[2][1]+ws[3][1] + " " + ws[4][1]
    
     p_a_b_cd_e, f_a_b_cd_e = pf_from_cache(a_b_cd_e)
 
@@ -444,7 +439,7 @@ def split_errors_window(ws):
         something_happened = True
         best_f = f_a_b_cd_e
         best_s = ws[0][1] + " " + ws[1][1] + " " + ws[2][1]+ws[3][1] + " " + ws[4][1]
-        best_candidate = ws[2][1] + ws[3][1]
+        best_candidate = ws[2][1] + ws[3][1] + " " + ws[4][1]
         best_span = [ws[2][0],ws[3][0]]
 
     correction = {'class': "spliterror", 'span': best_span, 'text': best_candidate}
@@ -633,7 +628,9 @@ def process(something):
     string_sentence = " ".join([x[1] for x in something])
     wip_sentence = copy.copy(something)
 
-    
+    if something[2][1] in string.punctuation:
+        print("Not correcting . and ,")
+        return []
 
     corrections = []
     if only_sentence and something[3][4] != only_sentence:
@@ -684,8 +681,10 @@ def process(something):
             local_change |= runon[0]
             if runon[0]:
                 local_corrections.append(runon[2])
+                corrections.append(runon[2])
                 wip_sentence = action_in_sentence(wip_sentence, runon[2])
                 print([(x[0],x[1]) for x in wip_sentence])
+                break
 
             replaceable = replaceables_window(w)
             local_change |= replaceable[0]
@@ -694,10 +693,12 @@ def process(something):
                 (rv, wip_sentence) = apply_on_corrections(replaceable[2], corrections, wip_sentence)
                 if not rv:
                     local_corrections.append(replaceable[2])
+                    corrections.append(replaceable[2])
                     #print(wip_sentence)
                     wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
                     print("Process\t:" + str([(x[0],x[1]) for x in wip_sentence]))
                     #print(wip_sentence)
+                    break
 
             split = split_errors_window(w)
             local_change |= split[0]
@@ -705,8 +706,10 @@ def process(something):
                 (rv, wip_sentence) = apply_on_corrections(split[2], corrections, wip_sentence)
                 if not rv:
                     local_corrections.append(split[2])
+                    corrections.append(split[2])
                     wip_sentence = action_in_sentence(wip_sentence, split[2])
                     print([(x[0],x[1]) for x in wip_sentence])
+                    break
 
             missing = missing_words_window(w)
             local_change |= missing[0]
@@ -714,8 +717,10 @@ def process(something):
                 (rv, wip_sentence) = apply_on_corrections(missing[2], corrections, wip_sentence)
                 if not rv:
                     local_corrections.append(missing[2])
+                    corrections.append(missing[2])
                     wip_sentence = action_in_sentence(wip_sentence, missing[2])
                     print([(x[0],x[1]) for x in wip_sentence])
+                    break
 
             change |= local_change
             corrections += local_corrections
