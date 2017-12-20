@@ -275,7 +275,8 @@ def replaceables_window(ws):
     best_f = fr(best_s)
     best_w = c
 
-    if is_year(c):
+    # Do not convert 2,5 into 25
+    if is_year(c) or c.translate(punct_translator).isdigit():
         return (False, best_s, {})
 
     local_threshold = replace_threshold
@@ -297,29 +298,14 @@ def replaceables_window(ws):
 
     # 1-1 word context
     if not something_happened:
-        best_f = fr(" ".join(words[1:2] + [ts(word)] + words[3:4]))
-        print(str(best_f) + "\t" + " ".join(words[1:2] + [ts(word)] + words[3:4]))
+        best_f = fr(" ".join(words[1:4]))
+        print(str(best_f) + "\t" + " ".join(words[1:4]))
         for word in all_words:
             if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
                 a_b_X_d_e = " ".join(words[1:2] + [ts(word)] + words[3:4])               
                 p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
-                
-#                try:
-#                    local_threshold = fr(" ".join(words[0:2] + [ts(word)] + words[3:5]))/fr(" ".join(words[0:5]))
-#                    #if ts(word) == "net" or ts(word) == "niet":
-#                    #    print(ts(word) + str(local_threshold))
-#                except ZeroDivisionError:
-#                    local_threshold = replace_threshold
-                #if ts(word) == "net" or ts(word) == "niet":
-                #        print(ts(word) + str(local_threshold))
-                
-                if a_b_X_d_e == "en dagen met":
-                    print(a_b_X_d_e)
-                    print(f_a_b_X_d_e)
-                    print(local_threshold)
-                    print(best_f)
-                
-                if f_a_b_X_d_e/local_threshold > best_f and fr(" ".join(words[1:2] + [ts(word)] + words[3:5])) >= fr(" ".join(words[1:2] + [c] + words[3:5])):
+                               
+                if f_a_b_X_d_e/local_threshold > best_f and fr(" ".join(words[1:2] + [ts(word)] + words[3:5])) >= fr(" ".join(words[1:5])):
                     something_happened = True
                     best_f = f_a_b_X_d_e
                     best_s = a_b_X_d_e
@@ -339,9 +325,7 @@ def replaceables_window(ws):
         if something_happened:
             best_s = ws[0][1] + " " + ws[1][1] + " " + best_w + " " + ws[3][1] + " " + ws[4][1]
     
-    # Do not convert 2,5 into 25
-    if c.translate(punct_translator).isdigit():
-        something_happened = False
+
 
     correction = {}
     correction['superclass'] = "replace"
