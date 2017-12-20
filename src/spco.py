@@ -191,6 +191,8 @@ all_words = []
 for w,c in model.filter(1, size=1):
     all_words.append(w)
 
+replace_threshold = 5
+
 ######################
 ## Run the game
 
