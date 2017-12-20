@@ -42,7 +42,9 @@ def ts(pattern):
     >>> ts(bp("patroon"))
     'patroon'
     """
-    return pattern.tostring(classdecoder)
+    if type(pattern) is colibricore.Pattern:
+        return pattern.tostring(classdecoder)
+    return str(pattern)
 
 def oc(pattern):
     """ 
@@ -51,6 +53,10 @@ def oc(pattern):
     >>> oc(bp("patroon"))
     170
     """
+    if type(pattern) is str:
+        pattern = bp(pattern)
+    if pattern.unknown():
+        return 0
     return model.occurrencecount(pattern)
 
 def fr(pattern):
@@ -60,7 +66,11 @@ def fr(pattern):
     
     >>> fr(bp("patroon"))
     1.4490891920364536e-05
-     """
+    """
+    if type(pattern) is str:
+        pattern = bp(pattern) 
+    if pattern.unknown():
+        return 0
     return model.frequency(pattern)
 
 def bp(string):
@@ -191,8 +201,8 @@ page1144 = json.load(open(unknown_args[0]))
 page1144_corrections = page1144['corrections']
 page1144_words = page1144['words']
 
-sos_filler = ['id-not-available', '<s>', classencoder.buildpattern(" "), True, 'in-not-available']
-eos_filler = ['id-not-available', '</s>', classencoder.buildpattern(" "), True, 'in-not-available']
+sos_filler = ['id-not-available', '<s>', bp(" "), True, 'in-not-available']
+eos_filler = ['id-not-available', '</s>', bp(" "), True, 'in-not-available']
 
 
 ######################
@@ -261,12 +271,14 @@ def replaceables_window(ws):
 
     c = ws[2][1]
 
-    best_s = classencoder.buildpattern(" ".join(words))
+    best_s = bp(" ".join(words))
     best_f = fr(best_s)
     best_w = c
 
     if is_year(c):
         return (False, best_s, {})
+
+    local_threshold = replace_threshold
 
     # 2-2 word context
     for word in all_words:
@@ -274,7 +286,7 @@ def replaceables_window(ws):
             a_b_X_d_e = " ".join(words[0:2] + [ts(word)] + words[3:5])
             p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
 
-            if f_a_b_X_d_e > best_f:
+            if f_a_b_X_d_e*local_threshold > best_f:
                 something_happened = True
                 best_f = f_a_b_X_d_e
                 best_s = a_b_X_d_e
@@ -287,7 +299,16 @@ def replaceables_window(ws):
                 a_b_X_d_e = " ".join(words[1:2] + [ts(word)] + words[3:4])               
                 p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
                 
-                if f_a_b_X_d_e > best_f:
+                try:
+                    local_threshold = fr(" ".join(words[0:2] + [ts(word)] + words[3:5]))/fr(" ".join(words[0:5]))
+                    #if ts(word) == "net" or ts(word) == "niet":
+                    #    print(ts(word) + str(local_threshold))
+                except ZeroDivisionError:
+                    local_threshold = replace_threshold
+                #if ts(word) == "net" or ts(word) == "niet":
+                #        print(ts(word) + str(local_threshold))
+                
+                if f_a_b_X_d_e*local_threshold > best_f:
                     something_happened = True
                     best_f = f_a_b_X_d_e
                     best_s = a_b_X_d_e
@@ -306,6 +327,10 @@ def replaceables_window(ws):
                     best_w = ts(word)
         if something_happened:
             best_s = ws[0][1] + " " + ws[1][1] + " " + best_w + " " + ws[3][1] + " " + ws[4][1]
+    
+    # Do not convert 2,5 into 25
+    if c.translate(punct_translator).isdigit():
+        something_happened = False
 
     correction = {}
     correction['superclass'] = "replace"
@@ -404,9 +429,9 @@ def split_errors_window(ws):
 
     something_happened = False
 
-    best_s = classencoder.buildpattern(" ".join(words))
+    best_s = bp(" ".join(words))
     best_candidate = ws[2][1] + " " + ws[3][1]
-    best_f = fr(classencoder.buildpattern(best_candidate))
+    best_f = fr(best_candidate)
     best_span = ""
 
     a_b_cd_e = ws[2][1]+ws[3][1]
@@ -447,8 +472,8 @@ def missing_words_window(ws):
     something_happened = False
     #
     joinwords = " ".join(words)
-    best_s = classencoder.buildpattern(joinwords)
-    best_f = fr(best_s)
+    best_s = bp(joinwords)
+    best_f = fr(" ".join(words[0:3] + words[3:4]))#fr(best_s)
     best_w = ""
 
     #
@@ -722,8 +747,6 @@ for item in page1144_words:
         sentence = []
         sentence.append(sos_filler)
         sentence.append(sos_filler)
-        # page1144_words.insert(0, sos_filler)
-        # page1144_words.insert(0, sos_filler)
     sentence.append([item['id'],
                      item['text'],
                      classencoder.buildpattern(item['text'], allowunknown=False, autoaddunknown=True),
@@ -734,5 +757,5 @@ page_corrections += process(sentence)
 pp = pprint.PrettyPrinter(indent=4)
 pp.pprint({'corrections': page_corrections, 'words': page1144_words})
 
-with open('/home/louis/Programming/COCOCLINSPCO/data/output/test4.json', 'w') as f:
+with open(outputdir + '/test4.json', 'w') as f:
     json.dump({'corrections': page_corrections, 'words': page1144_words}, f)
