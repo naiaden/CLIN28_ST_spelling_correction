@@ -1,3 +1,4 @@
+import pathlib
 from functools import singledispatch
 import colibricore
 
@@ -15,7 +16,7 @@ class LanguageModel:
         self.options = colibricore.PatternModelOptions(minlength=1, maxlength=5, mintokens=1)
 
         if model and pathlib.Path(model).is_file():
-            self.model = colibricore.UnindexedPatternModel(model, options)
+            self.model = colibricore.UnindexedPatternModel(model, self.options)
         else:
             if data and pathlib.Path(data).is_file():            
                 self.model = colibricore.UnindexedPatternModel()
@@ -71,13 +72,13 @@ class LanguageModel:
             return 0
         return self.model.frequency(pattern)
 
-    def bp(self, string):
+    def bp(self, string, allowunknown=False, autoaddunknown=False):
         """
         Returns the colibripattern.Pattern representation of string.
         
         >>> bp("patroon")
         <colibricore.Pattern at 0x7f253cf1eab0>
         """
-        return self.classencoder.buildpattern(string)
+        return self.classencoder.buildpattern(string, allowunknown=allowunknown, autoaddunknown=autoaddunknown)
 
 
