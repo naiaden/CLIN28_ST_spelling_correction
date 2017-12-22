@@ -72,7 +72,7 @@ class LanguageModel:
             return 0
         return self.model.frequency(pattern)
 
-    def bp(self, string, allowunknown=False, autoaddunknown=False):
+    def bp(self, string, allowunknown=True, autoaddunknown=False):
         """
         Returns the colibripattern.Pattern representation of string.
         

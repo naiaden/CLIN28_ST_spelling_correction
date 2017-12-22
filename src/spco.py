@@ -37,11 +37,12 @@ except RuntimeError as err:
 outputdir = args.outputdir
 #outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'
 
-run_tests = False
+run_tests = True
 
 if run_tests:
     testsuite = TestSuite(lm)
-    testsuite.test()
+    testsuite.run_tests()
+    testsuite.report()
 else:
     productionsuite = ProcessSuite(lm, outputdir)
     for f in unknown_args:
