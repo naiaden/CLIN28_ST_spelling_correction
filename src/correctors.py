@@ -1,7 +1,5 @@
 import string
 
-#
-#
 class Corrector:
     def __init__(self, lm):
         self.lm = lm
@@ -9,6 +7,24 @@ class Corrector:
     def update(self, fivegram):
         self.words = [w[1] for w in fivegram]
         self.something_happened = False
+        self.fivegram = fivegram
+        
+    def pf_from_cache(self, pattern):
+        """
+        If candidate is already in the pattern-frequency cache, then retrieve its
+        colibricore.Pattern representation and its frequency. Otherwise compute the
+        values and put it in the cache first.
+        
+        >>> pf_from_cache("patroon")
+        (<colibricore.Pattern at 0x7f253d1c68d0>, 1.4490891920364536e-05)
+        """
+        if False and pattern in p_cache:
+            (p_candidate, f_candidate) = p_cache[pattern]
+        else:
+            p_candidate = self.lm.bp(pattern)
+            f_candidate = self.lm.fr(p_candidate)
+            #p_cache[candidate] = (p_candidate, f_candidate)
+        return (p_candidate, f_candidate)
 #
 #    def correct(self, 
 #
@@ -74,22 +90,22 @@ class Splitter(Corrector):
     def __init__(self, lm):
         super().__init__(lm)
     
-    def correct(self, fivegram):
-        best_s = bp(" ".join(words))
-        best_candidate = fivegram[2][1] + " " + fivegram[3][1] + " " + fivegram[4][1]
-        best_f = fr(best_candidate)
+    def correct(self):
+        best_s = self.lm.bp(" ".join(self.words))
+        best_candidate = self.fivegram[2][1] + " " + self.fivegram[3][1] + " " + self.fivegram[4][1]
+        best_f = self.lm.fr(best_candidate)
         best_span = ""
 
-        a_b_cd_e = fivegram[2][1]+fivegram[3][1] + " " + fivegram[4][1]
+        a_b_cd_e = self.fivegram[2][1]+self.fivegram[3][1] + " " + self.fivegram[4][1]
        
-        p_a_b_cd_e, f_a_b_cd_e = pf_from_cache(a_b_cd_e)
+        p_a_b_cd_e, f_a_b_cd_e = self.pf_from_cache(a_b_cd_e)
 
         if not p_a_b_cd_e.unknown() and f_a_b_cd_e > best_f:# and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
             self.something_happened = True
             best_f = f_a_b_cd_e
-            best_s = fivegram[0][1] + " " + fivegram[1][1] + " " + fivegram[2][1]+fivegram[3][1] + " " + fivegram[4][1]
-            best_candidate = fivegram[2][1] + fivegram[3][1]
-            best_span = [fivegram[2][0],fivegramws[3][0]]
+            best_s = self.fivegram[0][1] + " " + self.fivegram[1][1] + " " + self.fivegram[2][1]+self.fivegram[3][1] + " " + self.fivegram[4][1]
+            best_candidate = self.fivegram[2][1] + self.fivegram[3][1]
+            best_span = [self.fivegram[2][0],self.fivegram[3][0]]
 
         correction = {'class': "spliterror", 'span': best_span, 'text': best_candidate}
         return (something_happened, best_s, correction)        
@@ -125,6 +141,7 @@ class Correctors:
             print("Not correcting punctuation")
             return []
         self.splitter.update(fivegram)
+        self.splitter.correct()
 
 
 
@@ -234,22 +251,7 @@ class Correctors:
 #        correction['text'] = best_w
 #        return (something_happened and best_s != " ".join(words), best_s, correction)
 #
-#    def pf_from_cache(candidate):
-#        """
-#        If candidate is already in the pattern-frequency cache, then retrieve its
-#        colibricore.Pattern representation and its frequency. Otherwise compute the
-#        values and put it in the cache first.
-#        
-#        >>> pf_from_cache("patroon")
-#        (<colibricore.Pattern at 0x7f253d1c68d0>, 1.4490891920364536e-05)
-#        """
-#        if False and candidate in p_cache:
-#            (p_candidate, f_candidate) = p_cache[candidate]
-#        else:
-#            p_candidate = classencoder.buildpattern(candidate)
-#            f_candidate = fr(p_candidate)
-#            #p_cache[candidate] = (p_candidate, f_candidate)
-#        return (p_candidate, f_candidate)
+
 #
 #    def runon_errors_window(ws):
 #        """
