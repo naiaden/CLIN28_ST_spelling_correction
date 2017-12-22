@@ -49,6 +49,12 @@ def cs(lm, sentence, in_id=None):
 
 def word_string(sentence):
     return " ".join([x[1] for x in sentence])
+    
+def words(sentence):
+    return [x[1] for x in sentence]
+    
+def patterns(sentence):
+    return [x[2] for x in sentence]
 
 ######################
 ## Global functions on other stuff

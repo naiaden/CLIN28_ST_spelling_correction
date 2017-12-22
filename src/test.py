@@ -11,7 +11,10 @@ class TestSuite():
 
     results = {}
 
-    def assertUpdate(self, caller, test_id, result):
+    def updateResults(self, caller, test_id, result):
+        if caller not in self.results:
+            self.results[caller] = {}
+    
         if test_id in self.results[caller]:
             print("FIX YOUR DOUBLE TEST IDS")
         else:
@@ -19,60 +22,40 @@ class TestSuite():
 
     def assertEqual(self, test_id, a, b):
         caller = inspect.currentframe().f_back.f_code.co_name
-        
-        if caller not in self.results:
-            self.results[caller] = {}
-        
+                
         result = a==b
-        self.assertUpdate(caller, test_id, result)
+        self.updateResults(caller, test_id, result)
         
             
     def assertNotEqual(self, test_id, a, b):
         caller = inspect.currentframe().f_back.f_code.co_name
         
-        if caller not in self.results:
-            self.results[caller] = {}
-        
         result = a!=b
-        self.assertUpdate(caller, test_id, result)
-        
-#        print(caller + '-' + test_id + ": " + )      
-    
+        self.updateResults(caller, test_id, result)
+  
     def assertTrue(self, test_id, a):
         caller = inspect.currentframe().f_back.f_code.co_name
         
-        if caller not in self.results:
-            self.results[caller] = {}
-        
         result = a
-        self.assertUpdate(caller, test_id, result)
+        self.updateResults(caller, test_id, result)
     
     def assertFalse(self, test_id, a):
         caller = inspect.currentframe().f_back.f_code.co_name
         
-        if caller not in self.results:
-            self.results[caller] = {}
-        
         result = not a
-        self.assertUpdate(caller, test_id, result)
+        self.updateResults(caller, test_id, result)
 
     def assertCorrection(self, test_id, correction, truth):
         caller = inspect.currentframe().f_back.f_code.co_name
         
-        if caller not in self.results:
-            self.results[caller] = {}
-                   
         result = correction[0] and self.lm.ts(correction[1]) == truth
-        self.assertUpdate(caller, test_id, result)
+        self.updateResults(caller, test_id, result)
     
     def assertNoCorrection(self, test_id, correction):
         caller = inspect.currentframe().f_back.f_code.co_name
         
-        if caller not in self.results:
-            self.results[caller] = {}
-                   
         result = not correction[0]
-        self.assertUpdate(caller, test_id, result)
+        self.updateResults(caller, test_id, result)
         
 
     def report(self):
@@ -155,6 +138,9 @@ class TestSuite():
         
         s12 = utils.cs(self.lm, "van de hindoe filosofie )", "page1014.text.div.1.div.4.p.3.s.1")
         self.assertCorrection("s12", splitter.correct(s12), "hindoefilosofie")
+        
+        s13 = utils.cs(self.lm, "elkaar ontdekt . </s> </s>", "page1144.text.div.1.p.1.s.1")
+        self.assertNoCorrection("s13", splitter.correct(s13))
 
     def test_missing(self):
         s1 = utils.cs(self.lm, "meestal gesloten , volgen", "page1027.text.div.1.div.6.p.1")
@@ -195,7 +181,7 @@ class TestSuite():
     
     def test_runon(self):
         s1 = utils.cs(self.lm, "De boeken - meest papyrusrollen", "page1008.text.div.1.p.3.s.5.w.3")
-        # - vooral
+        #self.assertCorrection("s1", splitter.correct(s1), "- vooral")
         
         s2 = utils.cs(self.lm, "geest , etcetera ) .", "page1014.text.div.1.div.5.p.2.s.4.w.43")
         # et cetera
@@ -212,6 +198,9 @@ class TestSuite():
         
         s6 = utils.cs(self.lm, "naar deze vacant-geworden positie te", "page1310.text.div.1.div.2.p.5.s.3.w.46")
         # vacant geworden
+        
+        s7 = utils.cs(self.lm, "is een kleur loos edelgas", "page1144.text.p.1.s.2.w.4")
+        #self.assertCorrection("s7", splitter.correct(s7), "kleurloos")
     
     def test_replace(self):
         pass

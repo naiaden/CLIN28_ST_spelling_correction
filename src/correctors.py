@@ -7,7 +7,9 @@ class Corrector:
         self.lm = lm
 
     def update(self, fivegram):
-        self.words = utils.word_string(fivegram)
+        self.patterns = utils.patterns(fivegram)
+        self.words = utils.words(fivegram)
+        self.word_string = utils.word_string(fivegram)
         self.something_happened = False
         self.fivegram = fivegram
         
@@ -202,11 +204,11 @@ class Attacher(Corrector):
         return self.correct_()
             
     def correct_(self):  
-        middle = self.words[2]#"".join(words[2:4])
+        middle = self.words[2]
 
-        best_s = self.lm.bp(" ".join(self.words))
+        best_s = self.lm.bp(self.word_string)
         best_candidate = middle
-        best_f = self.lm.fr(self.fivegram[2][2])
+        best_f = self.lm.fr(self.patterns[2])
 
         for x in range(len(middle)+1):
             candidate = copy.copy(middle)
@@ -217,7 +219,7 @@ class Attacher(Corrector):
             if f_candidate > best_f  and not self.lm.bp(candidate[:x]).unknown() and not self.lm.bp(candidate[x:]).unknown():# and s_candidate.strip().split(" "):
                 self.something_happened = True
                 best_f = f_candidate
-                best_s = " ".join(self.fivegram[0][1] + self.fivegram[1][1] + candidate + self.fivegram[3][1] + self.fivegram[4][1])
+                best_s = " ".join(self.words[0] + self.words[1] + candidate + self.words[3] + self.words[4])
                 best_candidate = candidate
 
         correction = {'class': "runonerror", 'span': [self.fivegram[2][0]], 'text': best_candidate}
@@ -236,13 +238,9 @@ class Correctors:
             return []
 
 
-        self.splitter.correct(fivegram)
-        
-        
-        self.attacher.correct(fivegram)
-        
-        
-        self.inserter.correct(fivegram)
+        #self.splitter.correct(fivegram)
+        print(self.attacher.correct(fivegram))
+        #self.inserter.correct(fivegram)
 
 
 

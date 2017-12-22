@@ -79,7 +79,7 @@ class ProcessSuite:
         wip_ssentence = copy.copy(sentence)
 
         for fivegram in utils.window(wip_ssentence, size=5):
-            print(fivegram)
+            print(utils.word_string(fivegram))
             self.correctors.correct(fivegram)
 
         # change
