@@ -33,6 +33,9 @@ class Replacer(Corrector):
     def __init__(self, lm):
         super().__init__(lm)
 
+    def correct(self, fivegram):
+        self.update(fivegram)
+
     def is_year(number):
         """ 
         A simple function to test if the input (string or number) is a year (between 1750 and 2100). 
@@ -95,7 +98,11 @@ class Splitter(Corrector):
     def __init__(self, lm):
         super().__init__(lm)
     
-    def correct(self):
+    def correct(self, fivegram):
+        self.update(fivegram)
+        return self.correct_()
+    
+    def correct_(self):
         best_s = self.lm.bp(" ".join(self.words))
         best_candidate = self.fivegram[2][1] + " " + self.fivegram[3][1] + " " + self.fivegram[4][1]
         best_f = self.lm.fr(best_candidate)
@@ -136,7 +143,11 @@ class Inserter(Corrector):
 #        """
         super().__init__(lm)
 
-    def correct(self):
+    def correct(self, fivegram):
+        self.update(fivegram)
+        return self.correct_()
+
+    def correct_(self):
         # at most 1 insertion
         if self.fivegram[3][0].endswith("M") or self.fivegram[2][0].endswith("M"):
             return (False, "", {})
@@ -186,8 +197,11 @@ class Attacher(Corrector):
     #        (True, 'de wapenindustrie te werk waren gesteld', {'class': 'runonerror', 'span': ['page1.text.div.5.p.2.s.1.w.4'], 'text': 'te werk'})
     #        """
         super().__init__(lm)
-        
-    def correct(self):  
+    def correct(self, fivegram):
+        self.update(fivegram)
+        return self.correct_()
+            
+    def correct_(self):  
         middle = self.words[2]#"".join(words[2:4])
 
         best_s = self.lm.bp(" ".join(self.words))
@@ -215,27 +229,20 @@ class Correctors:
         self.splitter = Splitter(lm)
         self.inserter = Inserter(lm)
         self.attacher = Attacher(lm)
-        
-    def update(self, fivegram):
-        self.splitter.update(fivegram)
-        self.attacher.update(fivegram)
-        self.inserter.update(fivegram)
-    
+           
     def correct(self, fivegram):
         if fivegram[2][1] in string.punctuation:
             print("Not correcting punctuation")
             return []
 
-        self.update(fivegram)
 
-
-        self.splitter.correct()
+        self.splitter.correct(fivegram)
         
         
-        self.attacher.correct()
+        self.attacher.correct(fivegram)
         
         
-        self.inserter.correct()
+        self.inserter.correct(fivegram)
 
 
 
