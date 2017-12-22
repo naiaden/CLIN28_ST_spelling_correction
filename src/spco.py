@@ -278,7 +278,7 @@ def replaceables_window(ws):
     best_w = c
 
     # Do not convert 2,5 into 25
-    if is_year(c) or c.translate(punct_translator).isdigit():
+    if is_year(c) or c.translate(punct_translator).isdigit() or c in string.punctuation:
         return (False, best_s, {})
 
     local_threshold = replace_threshold
@@ -439,7 +439,7 @@ def split_errors_window(ws):
         something_happened = True
         best_f = f_a_b_cd_e
         best_s = ws[0][1] + " " + ws[1][1] + " " + ws[2][1]+ws[3][1] + " " + ws[4][1]
-        best_candidate = ws[2][1] + ws[3][1] + " " + ws[4][1]
+        best_candidate = ws[2][1] + ws[3][1]
         best_span = [ws[2][0],ws[3][0]]
 
     correction = {'class': "spliterror", 'span': best_span, 'text': best_candidate}
@@ -684,6 +684,7 @@ def process(something):
                 corrections.append(runon[2])
                 wip_sentence = action_in_sentence(wip_sentence, runon[2])
                 print([(x[0],x[1]) for x in wip_sentence])
+                change = True
                 break
 
             replaceable = replaceables_window(w)
@@ -698,6 +699,7 @@ def process(something):
                     wip_sentence = action_in_sentence(wip_sentence, replaceable[2])
                     print("Process\t:" + str([(x[0],x[1]) for x in wip_sentence]))
                     #print(wip_sentence)
+                    change = True
                     break
 
             split = split_errors_window(w)
@@ -709,6 +711,7 @@ def process(something):
                     corrections.append(split[2])
                     wip_sentence = action_in_sentence(wip_sentence, split[2])
                     print([(x[0],x[1]) for x in wip_sentence])
+                    change = True
                     break
 
             missing = missing_words_window(w)
@@ -720,6 +723,7 @@ def process(something):
                     corrections.append(missing[2])
                     wip_sentence = action_in_sentence(wip_sentence, missing[2])
                     print([(x[0],x[1]) for x in wip_sentence])
+                    change = True
                     break
 
             change |= local_change
