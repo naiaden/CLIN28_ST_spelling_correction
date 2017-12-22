@@ -1,3 +1,5 @@
+import string
+
 def create_sentence(string, in_id="page1.text.div.1.p.1.s.1"):
     """
     Returns a test sentence as used by the task. An optional "in" completes the sentence.

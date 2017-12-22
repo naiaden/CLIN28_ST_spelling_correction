@@ -27,8 +27,12 @@ if not unknown_args:
     print("Missing input files. \n A B O R T")
     sys.exit()
 
-lm = LanguageModel(encoder=args.classfile, data=args.datafile, model=args.modelfile)
+try:
+    lm = LanguageModel(encoder=args.classfile, data=args.datafile, model=args.modelfile)
 #lm = LanguageModel(encoder='/home/louis/Data/corpus/small.colibri.cls', data='/home/louis/Data/corpus/small.colibri.dat', model='/home/louis/Data/corpus/small.colibri.model')
+except RuntimeError as err:
+    print("Caught a run-time error:", err)
+    sys.exit(-2)
 
 outputdir = args.outputdir
 #outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'
@@ -42,6 +46,11 @@ else:
     productionsuite = ProcessSuite(lm, outputdir)
     for f in unknown_args:
         # if in do-not-process list: do not process
-        productionsuite.process_file(f)
+        try:
+            productionsuite.process_file(f)
+        except FileNotFoundError as err:
+            print("Caught a file not found error:", err)
+            print("I will ignore this file")
+            
 
 

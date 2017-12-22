@@ -11,7 +11,7 @@ class LanguageModel:
             self.classencoder = colibricore.ClassEncoder(encoder)
             self.classdecoder = colibricore.ClassDecoder(encoder)
         else:
-            print("No valid encoder!")
+            raise RuntimeError("No valid encoder!")
         
         self.options = colibricore.PatternModelOptions(minlength=1, maxlength=5, mintokens=1)
 
@@ -23,7 +23,7 @@ class LanguageModel:
                 self.model.train(data, options)
                 self.model.write(model)
             else:
-                print("No valid model and/or data file!")
+                raise RuntimeError("No valid model and/or data file!")
        
         # This turns out to be faster than set or frozenset
         # However, it is mutable, so do not change

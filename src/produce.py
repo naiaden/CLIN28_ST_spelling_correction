@@ -1,6 +1,8 @@
 import json
 import copy
 
+import utils
+
 from correctors import Correctors
 
 class ProcessSuite:
@@ -13,12 +15,13 @@ class ProcessSuite:
 
         self.sent_iter = 0
 
-        self.correctors = Correctors()
+        self.correctors = Correctors(self.lm)
 
     def open_file(self, input_file):
         self.file_corrections = []
         self.file_words = []
 
+        
         with open(input_file, 'r') as f:
             input_json = json.load(f)
             self.file_words = input_json['words']
@@ -70,13 +73,17 @@ class ProcessSuite:
 
 
     def process_sentence(self, sentence):
-        print(sentence)
+        #print(sentence)
 
         string_sentence = " ".join([x[1] for x in sentence])
         wip_ssentence = copy.copy(sentence)
 
+        for fivegram in utils.window(wip_ssentence, size=5):
+            print(fivegram)
+            self.correctors.correct(fivegram)
+
         # change
         # corrections
-        self.correctors.correct(sentence)
+        #self.correctors.correct(sentence)
         
 

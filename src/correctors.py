@@ -3,18 +3,18 @@ import string
 #
 #
 class Corrector:
-    def __init__(self):
-        pass
-#
-#    def __init__(self, json_words):
-#        self.words = [w[1] for w in json_words]
-#        self.something_happened = False
+    def __init__(self, lm):
+        self.lm = lm
+
+    def update(self, fivegram):
+        self.words = [w[1] for w in fivegram]
+        self.something_happened = False
 #
 #    def correct(self, 
 #
 class Replacer(Corrector):
-    def __init__(self):
-        pass
+    def __init__(self, lm):
+        super().__init__(lm)
 #    def is_year(number):
 #        """ 
 #        A simple function to test if the input (string or number) is a year (between 1750 and 2100). 
@@ -52,30 +52,86 @@ class Replacer(Corrector):
 #
 #
 class Splitter(Corrector):
-    def __init__(self):
-        pass
+#        """
+#        This function tries to find split errors in the window 'a b cd e' for the words
+#        'c' and 'd'. If the frequency of 'c d' is higher than 'cd' (notice the the order
+#        of the window is now different), it replaces 'c d' with 'cd'. The space is
+#        inserted on all possible places, and the best match is choosen to be candidate
+#        for the correction
+#        
+#        Returns a triple (r1, r2, r3) where
+#            r1 = a correction has been found,
+#            r2 = the 'new' window, with word 'cd' being replaced for 'c d',
+#            r3 = the correction.
+#            
+#        >>> wss = create_internal_sentence(create_sentence("tot 10 jaar gevangenisstraf , voornamelijk".split(), 'page1.text.div.5.p.2.s.1'))
+#        >>> for w in window(wss, 5):
+#                print(split_errors_window(w))
+#        (False, <colibricore.Pattern object at 0x7f253d1c6e30>, {'class': 'spliterror', 'span': '', 'text': 'jaar gevangenisstraf'})
+#        (True, '10 jaar gevangenisstraf, voornamelijk', {'class': 'spliterror', 'span': ['page1.text.div.5.p.2.s.1.w.4', 'page1.text.div.5.p.2.s.1.w.5'], 'text': 'gevangenisstraf,'})
+#
+#        """
+    def __init__(self, lm):
+        super().__init__(lm)
+    
+    def correct(self, fivegram):
+        best_s = bp(" ".join(words))
+        best_candidate = fivegram[2][1] + " " + fivegram[3][1] + " " + fivegram[4][1]
+        best_f = fr(best_candidate)
+        best_span = ""
+
+        a_b_cd_e = fivegram[2][1]+fivegram[3][1] + " " + fivegram[4][1]
+       
+        p_a_b_cd_e, f_a_b_cd_e = pf_from_cache(a_b_cd_e)
+
+        if not p_a_b_cd_e.unknown() and f_a_b_cd_e > best_f:# and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
+            self.something_happened = True
+            best_f = f_a_b_cd_e
+            best_s = fivegram[0][1] + " " + fivegram[1][1] + " " + fivegram[2][1]+fivegram[3][1] + " " + fivegram[4][1]
+            best_candidate = fivegram[2][1] + fivegram[3][1]
+            best_span = [fivegram[2][0],fivegramws[3][0]]
+
+        correction = {'class': "spliterror", 'span': best_span, 'text': best_candidate}
+        return (something_happened, best_s, correction)        
+
+
+
+
+
+
+
+
+
+
+
 
 class Inserter(Corrector):
-    def __init__(self):
-        pass
+    def __init__(self, lm):
+        super().__init__(lm)
 
 class Attacher(Corrector):
-    def __init__(self):
-        pass
+    def __init__(self, lm):
+        super().__init__(lm)
 
 class Correctors:
-    replacer = Replacer()
-    splitter = Splitter()
-    inserter = Inserter()
-    attacher = Attacher()
-
-    def __init__(self):
-        pass
-
-    def correct(self, sentence):
-        if sentence[2][1] in string.punctuation:
+    def __init__(self, lm):
+        self.replacer = Replacer(lm)
+        self.splitter = Splitter(lm)
+        self.inserter = Inserter(lm)
+        self.attacher = Attacher(lm)
+    
+    def correct(self, fivegram):
+        if fivegram[2][1] in string.punctuation:
             print("Not correcting punctuation")
             return []
+        self.splitter.update(fivegram)
+
+
+
+
+
+
+
 
 
 #    def replaceables_window(ws):
@@ -237,48 +293,7 @@ class Correctors:
 #        correction = {'class': "runonerror", 'span': [ws[2][0]], 'text': best_candidate}
 #        return (something_happened, best_s, correction)
 #
-#    def split_errors_window(ws):
-#        """
-#        This function tries to find split errors in the window 'a b cd e' for the words
-#        'c' and 'd'. If the frequency of 'c d' is higher than 'cd' (notice the the order
-#        of the window is now different), it replaces 'c d' with 'cd'. The space is
-#        inserted on all possible places, and the best match is choosen to be candidate
-#        for the correction
-#        
-#        Returns a triple (r1, r2, r3) where
-#            r1 = a correction has been found,
-#            r2 = the 'new' window, with word 'cd' being replaced for 'c d',
-#            r3 = the correction.
-#            
-#        >>> wss = create_internal_sentence(create_sentence("tot 10 jaar gevangenisstraf , voornamelijk".split(), 'page1.text.div.5.p.2.s.1'))
-#        >>> for w in window(wss, 5):
-#                print(split_errors_window(w))
-#        (False, <colibricore.Pattern object at 0x7f253d1c6e30>, {'class': 'spliterror', 'span': '', 'text': 'jaar gevangenisstraf'})
-#        (True, '10 jaar gevangenisstraf, voornamelijk', {'class': 'spliterror', 'span': ['page1.text.div.5.p.2.s.1.w.4', 'page1.text.div.5.p.2.s.1.w.5'], 'text': 'gevangenisstraf,'})
-#
-#        """
-#        words = [w[1] for w in ws]
-#
-#        something_happened = False
-#
-#        best_s = bp(" ".join(words))
-#        best_candidate = ws[2][1] + " " + ws[3][1] + " " + ws[4][1]
-#        best_f = fr(best_candidate)
-#        best_span = ""
-#
-#        a_b_cd_e = ws[2][1]+ws[3][1] + " " + ws[4][1]
-#       
-#        p_a_b_cd_e, f_a_b_cd_e = pf_from_cache(a_b_cd_e)
-#
-#        if not p_a_b_cd_e.unknown() and f_a_b_cd_e > best_f:# and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
-#            something_happened = True
-#            best_f = f_a_b_cd_e
-#            best_s = ws[0][1] + " " + ws[1][1] + " " + ws[2][1]+ws[3][1] + " " + ws[4][1]
-#            best_candidate = ws[2][1] + ws[3][1]
-#            best_span = [ws[2][0],ws[3][0]]
-#
-#        correction = {'class': "spliterror", 'span': best_span, 'text': best_candidate}
-#        return (something_happened, best_s, correction)
+
 #
 #
 #    p_cache = {}
