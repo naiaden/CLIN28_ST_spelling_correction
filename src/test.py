@@ -48,7 +48,7 @@ class TestSuite():
     def assertCorrection(self, test_id, correction, truth):
         caller = inspect.currentframe().f_back.f_code.co_name
         
-        result = correction[0] and self.lm.ts(correction[1]) == truth
+        result = correction[0] and self.lm.ts(correction[2]['text']) == truth
         self.updateResults(caller, test_id, result)
     
     def assertNoCorrection(self, test_id, correction):
@@ -83,6 +83,7 @@ class TestSuite():
         self.test_split()
         self.test_missing()
         self.test_runon()
+        self.test_capitalization()
 
     def test_pattern(self):
         self.assertEqual("s1", self.lm.ts(self.lm.bp("mogelijkheden")), "mogelijkheden")
@@ -183,6 +184,71 @@ class TestSuite():
         
         s12 = utils.cs(self.lm, "Zijn stijl werd ouderwets beschouwd", "page1310.text.div.5.div.1.p.1.s.2")
         # als
+    
+    # grep -B 1 -A 5 "capitalization" ../data/validation/page*.json
+    # grep -B 13 -A 16 '"id": "page1.text.div.2.p.1.s.5.w.30"' ~/Programming/COCOCLINSPCO/data/validation/page*.json
+    def test_capitalization(self):
+        replacer = correctors.Replacer(self.lm)
+    
+        s1 = utils.cs(self.lm, "eeuw de Moslims kwamen oordeelde", "page1008.text.div.1.p.3.s.4")
+        self.assertCorrection("s1", replacer.correct(s1), "moslims")
+        
+        s2 = utils.cs(self.lm, "In de Islamitische wereld bouwde", "page1008.text.div.2.p.1.s.1")
+        self.assertCorrection("s2", replacer.correct(s2), "islamitische")
+        
+        s3 = utils.cs(self.lm, "In de Middeleeuwen werden opnieuw", "page1008.text.div.2.p.2.s.1")
+        self.assertCorrection("s3", replacer.correct(s3), "middeleeuwen")
+        
+        s4 = utils.cs(self.lm, "In de Renaissance verspreidde zich", "page1008.text.div.2.p.2.s.2")
+        self.assertCorrection("s4", replacer.correct(s4), "renaissance")
+        
+        s5 = utils.cs(self.lm, "God of Goden ? En", "page1014.text.div.1.div.1.list.1.item.1.s.1")
+        self.assertCorrection("s5", replacer.correct(s5), "goden")
+        
+        s6 = utils.cs(self.lm, "God / God(en) en de", "page1014.text.div.1.div.1.p.2.s.1")
+        self.assertCorrection("s6", replacer.correct(s6), "god(en)")
+        
+        s7 = utils.cs(self.lm, ". De Kabbala , de", "page1014.text.div.1.div.1.list.2.item.10.s.2")
+        self.assertCorrection("s7", replacer.correct(s7), "kabbala")
+        
+        s8 = utils.cs(self.lm, ", de Joodse mystiek ,", "page1014.text.div.1.div.1.list.2.item.10.s.2")
+        self.assertCorrection("s8", replacer.correct(s8), "joodse")
+        
+        s9 = utils.cs(self.lm, ". ( zie ook God", "page1014.text.div.1.div.2.p.2.s.4")
+        self.assertCorrection("s9", replacer.correct(s9), "Zie")
+        
+        s10 = utils.cs(self.lm, "schepper ) Abrahamitisch-monotheïstische eigenschappen van", "page1014.text.div.1.div.2.p.2.s.4")
+        self.assertCorrection("s10", replacer.correct(s10), "abrahamitisch-monotheïstische")
+        
+        s11 = utils.cs(self.lm, "tot het Zoroastrisme zoals grondgelegd", "page1014.text.div.1.div.2.p.3.s.1")
+        self.assertCorrection("s11", replacer.correct(s11), "zoroastrisme")
+        
+        s12 = utils.cs(self.lm, "Neopaganisten , Wicca-aanhangers in het", "page1014.text.div.1.div.3.p.1.s.4")
+        self.assertCorrection("s12", replacer.correct(s12), "wicca-aanhangers")
+        
+        s13 = utils.cs(self.lm, "of de Paus , en", "page1014.text.div.1.div.4.p.1.s.1")
+        self.assertCorrection("s13", replacer.correct(s13), "paus")
+        
+        s14 = utils.cs(self.lm, "van die Ene God .", "page1014.text.div.1.div.4.p.2.s.2")
+        self.assertCorrection("s14", replacer.correct(s14), "ene")
+        
+        s15 = utils.cs(self.lm, "De Haagse school is ontstaan", "page1020.text.p.1.s.1")
+        self.assertCorrection("s15", replacer.correct(s15), "School")
+        
+        s16 = utils.cs(self.lm, "Feestdagen en Schoolvakanties in 2011", "page1027.text.div.8.list.1.item.1.s.1")
+        self.assertCorrection("s16", replacer.correct(s16), "schoolvakanties")
+        
+        s17 = utils.cs(self.lm, "Verzamelhobbies verzamelen Filatelie , Modeltrein", "page1037.text.list.1.item.4.p.1.s.1")
+        self.assertCorrection("s17", replacer.correct(s17), "filatelie")
+        
+        s18 = utils.cs(self.lm, "van de olympische spelen in", "page1.text.div.2.p.1.s.5")
+        self.assertCorrection("s18", replacer.correct(s18), "Olympische")
+        
+        s19 = utils.cs(self.lm, "van de olympische Spelen in Peking", "page1.text.div.2.p.1.s.5")
+        self.assertCorrection("s19", replacer.correct(s19), "Spelen")
+        
+        s20 = utils.cs(self.lm, "van de Olympische Spelen in Peking", "page1.text.div.2.p.1.s.5")
+        self.assertCorrection("s20", replacer.correct(s20), "Spelen")
     
     def test_runon(self):
         attacher = correctors.Attacher(self.lm)

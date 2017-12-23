@@ -60,7 +60,9 @@ class Replacer(Corrector):
 #        (True, 'bij de Processen van Neurenberg', {'superclass': 'replace', 'class': 'capitalizationerror', 'span': ['page1.text.div.5.p.2.s.1.w.4'], 'text': 'Processen'})
 #        """
         super().__init__(lm)
-        self.replace_threshold = 5
+        self.replace_threshold1 = 5
+        self.replace_threshold2 = 10
+        self.replace_threshold3 = 50
 
     def correct(self, fivegram):
         self.update(fivegram)
@@ -112,7 +114,7 @@ class Replacer(Corrector):
         if self.is_year(c) or utils.remove_punct(c).isdigit() or c in string.punctuation:
             return (False, best_s, {})
 
-        local_threshold = self.replace_threshold
+        #local_threshold = self.replace_threshold
 
         # 2-2 word context
         for word in self.lm.all_words:
@@ -121,7 +123,7 @@ class Replacer(Corrector):
                 a_b_X_d_e = " ".join(self.words[0:2] + [tsword] + self.words[3:5])
                 p_a_b_X_d_e, f_a_b_X_d_e = self.pf_from_cache(a_b_X_d_e)
 
-                if f_a_b_X_d_e*local_threshold > best_f:
+                if f_a_b_X_d_e/self.replace_threshold1 > best_f:
                     self.something_happened = True
                     best_f = f_a_b_X_d_e
                     best_s = a_b_X_d_e
@@ -140,7 +142,7 @@ class Replacer(Corrector):
                     b_X_d = " ".join(self.words[1:2] + [tsword] + self.words[3:4])               
                     p_b_X_d, f_b_X_d = self.pf_from_cache(b_X_d)
                                    
-                    if f_b_X_d/local_threshold > best_f and self.lm.fr(" ".join(self.words[1:2] + [tsword] + self.words[3:5])) >= self.lm.fr(" ".join(self.words[1:5])):
+                    if f_b_X_d/self.replace_threshold2 > best_f and self.lm.fr(" ".join(self.words[1:2] + [tsword] + self.words[3:5])) >= self.lm.fr(" ".join(self.words[1:5])):
                         self.something_happened = True
                         best_f = f_b_X_d
                         best_s = b_X_d
