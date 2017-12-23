@@ -1,4 +1,5 @@
 import string
+import inspect
 
 def create_sentence(string, in_id="page1.text.div.1.p.1.s.1"):
     """
@@ -100,4 +101,8 @@ def window(iterable, size=2):
 punct_translator = str.maketrans('', '', string.punctuation)
 def remove_punct(s):
     return s.translate(punct_translator)
-    
+
+
+def cout(message, tabs=0):
+    caller = inspect.currentframe().f_back.f_code.co_name
+    print("[" + caller + "]\t" + "\t"*tabs + message)

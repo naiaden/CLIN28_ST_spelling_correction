@@ -128,14 +128,14 @@ class Replacer(Corrector):
                     best_f = f_a_b_X_d_e
                     best_s = a_b_X_d_e
                     best_w = tsword
-                    print("nee")
+                    #print("nee")
 
         
 
         # 1-1 word context
         if not self.something_happened:
             best_f = self.lm.fr(" ".join(self.words[1:4]))
-            print(str(best_f) + "\t" + " ".join(self.words[1:4]))
+            #print(str(best_f) + "\t" + " ".join(self.words[1:4]))
             for word in self.lm.all_words:
                 tsword = self.lm.ts(word)
                 if not word.unknown() and Levenshtein.distance(tsword, c) < 2:
@@ -285,13 +285,13 @@ class Inserter(Corrector):
         for word in self.lm.all_words:
             if not word.unknown():
                 tsword = self.lm.ts(word)
-                a_b_c_X_d_e = " ".join(self.words[0:3] + [tsword] + self.words[3:4])
-                p_a_b_c_X_d_e, f_a_b_c_X_d_e = self.pf_from_cache(a_b_c_X_d_e)
+                a_b_c_X_d = " ".join(self.words[0:3] + [tsword] + self.words[3:4])
+                p_a_b_c_X_d, f_a_b_c_X_d = self.pf_from_cache(a_b_c_X_d)
                     
-                if f_a_b_c_X_d_e > best_f:
+                if f_a_b_c_X_d > best_f:
                     self.something_happened = True
-                    best_f = f_a_b_c_X_d_e
-                    best_s = a_b_c_X_d_e
+                    best_f = f_a_b_c_X_d
+                    best_s = a_b_c_X_d
                     best_w = tsword
             # backoff option?
         correction = {'class': "missingword", 'after': self.fivegram[2][0], 'text': best_w}
@@ -360,19 +360,25 @@ class Correctors:
             print("Not correcting punctuation")
             return []
 
+        corrections = []
+
         split = self.splitter.correct(fivegram)
-        print("\t\tSPLIT\t" + str(split[0]) + "\t" + split[2]['text'])
+        if split[0]:
+            corrections.append(split)
         
         runon = self.attacher.correct(fivegram)
-        print("\t\tRUNON\t" + str(runon[0]) + "\t" + runon[2]['text'])
+        if runon[0]:
+            corrections.append(runon)
 
         replace = self.replacer.correct(fivegram)
-        #print("\t\REPLACE\t" + str(replace[0]) + "\t" + replace[2]['text'])
-        print(replace)
+        if replace[0]:
+            corrections.append(replace)
         
-#        insert = self.inserter.correct(fivegram)
-#        print("\t\tINSERT\t" + str(insert[0]) + "\t" + insert[2]['text'])
-
+        insert = self.inserter.correct(fivegram)
+        if insert[0]:
+            corrections.append(insert)
+        
+        return corrections
 
 
 

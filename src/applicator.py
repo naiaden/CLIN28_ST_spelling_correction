@@ -1,5 +1,16 @@
+import random
+import utils
+
 class Applicator:
-    def apply(sentence, correction):
+    def __init__(self, lm):
+        self.lm = lm
+
+    def apply(self, sentence, corrections):
+        for correction in corrections:
+            utils.cout(str(correction), 2)
+            self.apply_on_corrections(correction, corrections, sentence)
+
+    def apply_one(self, sentence, correction):
         """
         This function tries to apply a correction on the sentence.
         
@@ -11,11 +22,11 @@ class Applicator:
                 if id[0] == correction['span'][0]:
                     id[1] = correction['text'].split(" ")[0]
                     #print(id[1] + " " + str(iter))
-                    id[2] = classencoder.buildpattern(correction['text'].split(" ")[0], allowunknown=False, autoaddunknown=True)
+                    id[2] = self.lm.bp(correction['text'].split(" ")[0], allowunknown=False, autoaddunknown=True)
                     break
             new_entry = [id[0] + "R",
                          correction['text'].split(" ")[1],
-                         classencoder.buildpattern(correction['text'].split(" ")[1], allowunknown=False, autoaddunknown=True),
+                         self.lm.bp(correction['text'].split(" ")[1], allowunknown=False, autoaddunknown=True),
                          item['space'],
                          item['in']]
             sentence.insert(iter+1, new_entry)
@@ -23,13 +34,13 @@ class Applicator:
             for iter,id in enumerate(sentence):
                 if id[0] == correction['span'][0]:
                     id[1] = correction['text']
-                    id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
+                    id[2] = self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True)
                     break
         if correction['class'] == "spliterror":
             for iter,id in enumerate(sentence):
                 if id[0] == correction['span'][0]:
                     id[1] = correction['text']
-                    id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
+                    id[2] = self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True)
                 if id[0] == correction['span'][1]:
                     break
             del sentence[iter]
@@ -40,14 +51,14 @@ class Applicator:
                     break
             new_entry = [id[0] + "." + str(random.randint(1,100)) + "M",
                          correction['text'],
-                         classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True),
+                         self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True),
                          item['space'],
                          item['in']]
             sentence.insert(iter+1, new_entry)
 
         return sentence
     
-    def apply_on_corrections(correction, corrections, sentence):
+    def apply_on_corrections(self, correction, corrections, sentence):
         """
         This function checks whether a correction is due to be applied on
         another correction, in which case it will try to gracefully handle
@@ -73,51 +84,51 @@ class Applicator:
                 ['page1.text.div.4.p.1.s.2.w.19', 'de', <colibricore.Pattern at 0x7f253cf80270>, True, 'page1.text.div.4.p.1.s.2']])
         """  
         rv = False
-        if correction.get('superclass', "") == 'replace':
-            if correction['span'][0].endswith("M"):
-                print("correction: " + str(correction))
-                f_id = correction['span'][0]
+#        if correction.get('superclass', "") == 'replace':
+#            if correction['span'][0].endswith("M"):
+#                print("correction: " + str(correction))
+#                f_id = correction['span'][0]
 
-                for c in corrections:
-                    print("          : " + str(c))
-                    if 'span' in c and c['span'][0] == f_id:
-                        c['text'] = correction['text']
-                        print("          :>" + str(c))
-                        rv = True
+#                for c in corrections:
+#                    print("          : " + str(c))
+#                    if 'span' in c and c['span'][0] == f_id:
+#                        c['text'] = correction['text']
+#                        print("          :>" + str(c))
+#                        rv = True
 
-                        for id in sentence:
-                            if id[0] == f_id:
-                                id[1] = correction['text']
-                                id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
-                                break
+#                        for id in sentence:
+#                            if id[0] == f_id:
+#                                id[1] = correction['text']
+#                                id[2] = self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True)
+#                                break
 
-                        break
-                    if 'after' in c and c['after'] == ".".join(f_id.split(".")[0:-1]):
-                        c['text'] = correction['text']
-                        print("          :>" + str(c))
-                        rv = True
+#                        break
+#                    if 'after' in c and c['after'] == ".".join(f_id.split(".")[0:-1]):
+#                        c['text'] = correction['text']
+#                        print("          :>" + str(c))
+#                        rv = True
 
-                        for id in sentence:
-                            if id[0] == f_id:
-                                id[1] = correction['text']
-                                id[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
-                                break
+#                        for id in sentence:
+#                            if id[0] == f_id:
+#                                id[1] = correction['text']
+#                                id[2] = self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True)
+#                                break
 
-                        break
-        if correction['class'] == 'spliterror':
-            if fid(correction['span'][0]) == fid(correction['span'][1]) and correction['span'][1].endswith("M"):
-                
-                for iter, wid in enumerate(sentence):
-                    print(wid)
-                    if wid[0] == correction['span'][0]:
-    #                    print("--" + str(wid))                    
-                        wid[1] = correction['text']
-                        wid[2] = classencoder.buildpattern(correction['text'], allowunknown=False, autoaddunknown=True)
-                        
-                        rv = True
-                    if  wid[0] == correction['span'][1]:
-    #                    print(">>" + str(wid) + "\t\t(" + str(iter) + ")")
-                        break
-                if sentence[iter][0].endswith("M"):
-                    del sentence[iter]
-        return (rv, sentence)
+#                        break
+#        if correction['class'] == 'spliterror':
+#            if fid(correction['span'][0]) == fid(correction['span'][1]) and correction['span'][1].endswith("M"):
+#                
+#                for iter, wid in enumerate(sentence):
+#                    print(wid)
+#                    if wid[0] == correction['span'][0]:
+#    #                    print("--" + str(wid))                    
+#                        wid[1] = correction['text']
+#                        wid[2] = self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True)
+#                        
+#                        rv = True
+#                    if  wid[0] == correction['span'][1]:
+#    #                    print(">>" + str(wid) + "\t\t(" + str(iter) + ")")
+#                        break
+#                if sentence[iter][0].endswith("M"):
+#                    del sentence[iter]
+#        return (rv, sentence)

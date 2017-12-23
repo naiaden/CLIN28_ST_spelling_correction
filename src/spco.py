@@ -40,14 +40,14 @@ outputdir = args.outputdir
 run_tests = True
 
 
-#productionsuite = ProcessSuite(lm, outputdir)
-#for f in unknown_args:
-#    # if in do-not-process list: do not process
-#    try:
-#        productionsuite.process_file(f)
-#    except FileNotFoundError as err:
-#        print("Caught a file not found error:", err)
-#        print("I will ignore this file")
+productionsuite = ProcessSuite(lm, outputdir)
+for f in unknown_args:
+    # if in do-not-process list: do not process
+    try:
+        productionsuite.process_file(f)
+    except FileNotFoundError as err:
+        print("Caught a file not found error:", err)
+        print("I will ignore this file")
             
 
 testsuite = TestSuite(lm)

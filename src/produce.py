@@ -4,6 +4,7 @@ import copy
 import utils
 
 from correctors import Correctors
+from applicator import Applicator
 
 class ProcessSuite:
     def __init__(self, lm, outputdir):
@@ -16,6 +17,7 @@ class ProcessSuite:
         self.sent_iter = 0
 
         self.correctors = Correctors(self.lm)
+        self.applicator = Applicator(self.lm)
 
     def open_file(self, input_file):
         self.file_corrections = []
@@ -80,8 +82,8 @@ class ProcessSuite:
 
         print("[" + str(self.sent_iter) + "] " + utils.word_string(wip_ssentence))
         for fivegram in utils.window(wip_ssentence, size=5):
-            print("\t" + utils.word_string(fivegram))
-            self.correctors.correct(fivegram)
+            corrections = self.correctors.correct(fivegram)
+            self.applicator.apply(wip_ssentence, corrections)
 
         # change
         # corrections

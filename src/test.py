@@ -22,7 +22,7 @@ def register(*args):
 class TestSuite():
     def __init__(self, lm):
         self.lm = lm
-        self.verbose = False
+        self.verbose = True
 
     results = {}
 
@@ -164,41 +164,43 @@ class TestSuite():
 
     @register()
     def test_missing(self):
+        inserter = correctors.Inserter(self.lm)
+    
         s1 = utils.cs(self.lm, "meestal gesloten , volgen", "page1027.text.div.1.div.6.p.1")
-        # dan nog
+        self.assertCorrection("s1", inserter.correct(s1), "dan nog")
         
         s2 = utils.cs(self.lm, "geregeld leven en hij zich", "page1065.text.div.3.p.1.s.4")
-        # kon
+        self.assertCorrection("s2", inserter.correct(s2), "kon")
         
         s3 = utils.cs(self.lm, "gekend volkse tafereel . Het", "page1065.text.div.4.p.3.s.7")
-        # is
+        self.assertCorrection("s3", inserter.correct(s3), "is")
         
         s4 = utils.cs(self.lm, "voor veel componisten met hem", "page1310.text.p.2.s.2")
-        # zowel
+        self.assertCorrection("s4", inserter.correct(s4), "zowel")
         
         s5 = utils.cs(self.lm, "korte koraalvoorspelen voor orgel -", "page1310.text.div.1.p.1.s.8")
-        # het
+        self.assertCorrection("s5", inserter.correct(s5), "het")
         
         s6 = utils.cs(self.lm, "' suites voor klavecimbel .", "page1310.text.div.1.div.2.p.3.s.1")
-        # de
+        self.assertCorrection("s6", inserter.correct(s6), "de")
         
         s7 = utils.cs(self.lm, "persoonlijke koraalvoorspelenboekje voor orgel uit", "page1310.text.div.1.div.2.p.6.s.1")
-        # het
+        self.assertCorrection("s7", inserter.correct(s7), "het")
         
         s8 = utils.cs(self.lm, "en kleine terts-toonsoorten zijn geschreven", "page1310.text.div.1.div.2.p.6.s.3")
-        # in
+        self.assertCorrection("s8", inserter.correct(s8), "in")
         
         s9 = utils.cs(self.lm, "en de alom Leipziger Messe", "page1310.text.div.1.div.3.p.1.s.1")
-        # bekende
+        self.assertCorrection("s9", inserter.correct(s9), "bekende")
         
         s10 = utils.cs(self.lm, "( circa 200 ) bewaard", "page1310.text.div.1.div.3.p.1.s.3")
-        # cantates
+        self.assertCorrection("s10", inserter.correct(s10), "cantates")
         
         s11 = utils.cs(self.lm, "zijn dood raakten componist en", "page1310.text.div.3.p.2.s.1")
-        # de
+        self.assertCorrection("s11", inserter.correct(s11), "de")
         
         s12 = utils.cs(self.lm, "Zijn stijl werd ouderwets beschouwd", "page1310.text.div.5.div.1.p.1.s.2")
-        # als
+        self.assertCorrection("s12", inserter.correct(s12), "als")
     
     # grep -B 1 -A 5 "capitalization" ../data/validation/page*.json
     # grep -B 13 -A 16 '"id": "page1.text.div.2.p.1.s.5.w.30"' ~/Programming/COCOCLINSPCO/data/validation/page*.json
