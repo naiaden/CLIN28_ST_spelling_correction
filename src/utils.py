@@ -47,6 +47,9 @@ def cs(lm, sentence, in_id=None):
     else:
         return create_internal_sentence(lm, create_sentence(sentence.split()))
 
+def word_string_l(alist):
+    return " ".join(alist)
+
 def word_string(sentence):
     return " ".join([x[1] for x in sentence])
     

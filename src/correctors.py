@@ -105,26 +105,42 @@ class Splitter(Corrector):
         return self.correct_()
     
     def correct_(self):
-        best_s = self.lm.bp(" ".join(self.words))
-        best_candidate = self.fivegram[2][1] + " " + self.fivegram[3][1] + " " + self.fivegram[4][1]
-        best_f = self.lm.fr(best_candidate)
-        best_span = ""
+        c_d_e = self.words[2] + " " + self.words[3] + " " + self.words[4]       
+        p_c_d_e, f_c_d_e = self.pf_from_cache(c_d_e)        
 
-        a_b_cd_e = self.fivegram[2][1]+self.fivegram[3][1] + " " + self.fivegram[4][1]
-       
-        #print(a_b_cd_e)
-       
-        p_a_b_cd_e, f_a_b_cd_e = self.pf_from_cache(a_b_cd_e)
+        cd_e = self.words[2] + self.words[3] + " " + self.words[4]       
+        p_cd_e, f_cd_e = self.pf_from_cache(cd_e)
 
-        if not p_a_b_cd_e.unknown() and f_a_b_cd_e > best_f: #and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
-            self.something_happened = True
-            best_f = f_a_b_cd_e
-            best_s = self.fivegram[0][1] + " " + self.fivegram[1][1] + " " + self.fivegram[2][1]+self.fivegram[3][1] + " " + self.fivegram[4][1]
-            best_candidate = self.fivegram[2][1] + self.fivegram[3][1]
-            best_span = [self.fivegram[2][0],self.fivegram[3][0]]
+#        print(c_d_e + " & " + cd_e + ": " + str(f_c_d_e) + " & " + str(f_cd_e))
 
-        correction = {'class': "spliterror", 'span': best_span, 'text': best_candidate}
-        return (self.something_happened, best_s, correction)        
+        if not p_cd_e.unknown() and f_cd_e > f_c_d_e: #and not oc(classencoder.buildpattern(ws[1][1]+" "+ws[2][1])):
+            new_swindow = self.words[0] + " " + self.words[1] + " " + self.words[2] + self.words[3] + " " + self.words[4]
+            proposal = self.words[2] + self.words[3]
+            span = [self.fivegram[2][0],self.fivegram[3][0]]
+            
+            correction = {'class': "spliterror", 'span': span, 'text': proposal, 'confidence': 1}
+            return (True, new_swindow, correction)  
+
+
+        c_d = self.words[2] + " " + self.words[3]    
+        p_c_d, f_c_d = self.pf_from_cache(c_d)   
+        o_c_d = self.lm.oc(p_c_d)    
+
+        cd = self.words[2] + self.words[3]     
+        p_cd, f_cd = self.pf_from_cache(cd)
+        o_cd = self.lm.oc(p_cd)
+        
+        if not p_cd.unknown() and o_cd > o_c_d:
+            new_swindow = self.words[0] + " " + self.words[1] + " " + self.words[2] + self.words[3] + " " + self.words[4]
+            proposal = self.words[2] + self.words[3]
+            span = [self.fivegram[2][0],self.fivegram[3][0]]
+            
+            correction = {'class': "spliterror", 'span': span, 'text': proposal, 'confidence': 0.5}
+            return (True, new_swindow, correction)  
+            
+    
+        correction = {'class': "spliterror", 'span': [], 'text': "", 'confidence': 1}
+        return (False, self.word_string, correction)        
 
 
 
@@ -155,8 +171,8 @@ class Inserter(Corrector):
             return (False, "", {})
 
         #
-        joinwords = " ".join(self.words)
-        best_s = self.lm.bp(joinwords)
+
+        best_s = self.lm.bp(self.word_string)
         best_f = self.lm.fr(" ".join(self.words[0:3] + self.words[3:4]))#fr(best_s)
         best_w = ""
 
@@ -164,7 +180,7 @@ class Inserter(Corrector):
         for word in self.lm.all_words:
             if not word.unknown():
                 tsword = self.lm.ts(word)
-                a_b_c_X_d_e = " ".join(self.words[0:3] + tsword + self.words[3:4]) ### [ tsword ] ?????
+                a_b_c_X_d_e = " ".join(self.words[0:3] + [tsword] + self.words[3:4])
                 p_a_b_c_X_d_e, f_a_b_c_X_d_e = self.pf_from_cache(a_b_c_X_d_e)
                     
                 if f_a_b_c_X_d_e > best_f:
@@ -224,6 +240,8 @@ class Attacher(Corrector):
 
         correction = {'class': "runonerror", 'span': [self.fivegram[2][0]], 'text': best_candidate}
         return (self.something_happened, best_s, correction)
+        ## Maybe do something with space lacking after interpunction?
+        ## See test_runon:s4
 
 class Correctors:
     def __init__(self, lm):
@@ -237,10 +255,14 @@ class Correctors:
             print("Not correcting punctuation")
             return []
 
-
-        #self.splitter.correct(fivegram)
-        print(self.attacher.correct(fivegram))
-        #self.inserter.correct(fivegram)
+        split = self.splitter.correct(fivegram)
+        print("\t\tSPLIT\t" + str(split[0]) + "\t" + split[2]['text'])
+        
+        runon = self.attacher.correct(fivegram)
+        print("\t\tRUNON\t" + str(runon[0]) + "\t" + runon[2]['text'])
+#        
+#        insert = self.inserter.correct(fivegram)
+#        print("\t\tINSERT\t" + str(insert[0]) + "\t" + insert[2]['text'])
 
 
 

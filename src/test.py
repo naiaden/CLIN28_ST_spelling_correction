@@ -57,6 +57,8 @@ class TestSuite():
         result = not correction[0]
         self.updateResults(caller, test_id, result)
         
+    def reset(self):
+        self.results = {}
 
     def report(self):
         total_pass = 0

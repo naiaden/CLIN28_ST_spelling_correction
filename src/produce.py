@@ -75,11 +75,12 @@ class ProcessSuite:
     def process_sentence(self, sentence):
         #print(sentence)
 
-        string_sentence = " ".join([x[1] for x in sentence])
+        string_sentence = utils.word_string(sentence)
         wip_ssentence = copy.copy(sentence)
 
+        print("[" + str(self.sent_iter) + "] " + utils.word_string(wip_ssentence))
         for fivegram in utils.window(wip_ssentence, size=5):
-            print(utils.word_string(fivegram))
+            print("\t" + utils.word_string(fivegram))
             self.correctors.correct(fivegram)
 
         # change
