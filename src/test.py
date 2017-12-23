@@ -4,6 +4,21 @@ import inspect
 import correctors
 import collections
 
+def test_register(cls):
+    cls._propdict = {}
+    for methodname in dir(cls):
+        method = getattr(cls, methodname)
+        if hasattr(method, '_prop'):
+            cls._propdict.update({methodname: method})
+    return cls
+
+def register(*args):
+    def wrapper(func):
+        func._prop = args
+        return func
+    return wrapper
+
+@test_register
 class TestSuite():
     def __init__(self, lm):
         self.lm = lm
@@ -78,18 +93,16 @@ class TestSuite():
         print("[-ALL-]\tPASS: " + str(total_pass) + "\tFAIL:" + str(total_all - total_pass) )
             
     def run_tests(self):
-        self.test_pattern()
-        self.test_counts()
-        self.test_split()
-        self.test_missing()
-        self.test_runon()
-        self.test_capitalization()
-
+        for function, args in self._propdict.items():
+            getattr(self, function)()
+    
+    @register()
     def test_pattern(self):
         self.assertEqual("s1", self.lm.ts(self.lm.bp("mogelijkheden")), "mogelijkheden")
         self.assertEqual("s2", self.lm.ts(self.lm.bp("qwem,n82")), "{?}")
         self.assertNotEqual("s3", self.lm.ts(self.lm.bp("mogelijkheden")), "{?}")
 
+    @register()
     def test_counts(self):
         self.assertTrue("s1", self.lm.oc("mogelijkheden") > 0)
         self.assertTrue("s2", self.lm.oc(self.lm.bp("mogelijkheden")) > 0)
@@ -102,7 +115,8 @@ class TestSuite():
         
         self.assertFalse("s7", self.lm.fr("asdgfafzxcv2") > 0)
         self.assertFalse("s8", self.lm.fr(self.lm.bp("asdgfafzxcv2")) > 0)
-        
+    
+    @register()
     def test_split(self):
         splitter = correctors.Splitter(self.lm)
     
@@ -148,6 +162,7 @@ class TestSuite():
         s14 = utils.cs(self.lm, "is een kleur loos edelgas", "page1144.text.p.1.s.2.w.4")
         self.assertCorrection("s14", splitter.correct(s14), "kleurloos")
 
+    @register()
     def test_missing(self):
         s1 = utils.cs(self.lm, "meestal gesloten , volgen", "page1027.text.div.1.div.6.p.1")
         # dan nog
@@ -187,6 +202,7 @@ class TestSuite():
     
     # grep -B 1 -A 5 "capitalization" ../data/validation/page*.json
     # grep -B 13 -A 16 '"id": "page1.text.div.2.p.1.s.5.w.30"' ~/Programming/COCOCLINSPCO/data/validation/page*.json
+    @register()
     def test_capitalization(self):
         replacer = correctors.Replacer(self.lm)
     
@@ -250,6 +266,7 @@ class TestSuite():
         s20 = utils.cs(self.lm, "van de Olympische Spelen in Peking", "page1.text.div.2.p.1.s.5")
         self.assertCorrection("s20", replacer.correct(s20), "Spelen")
     
+    @register()
     def test_runon(self):
         attacher = correctors.Attacher(self.lm)
     
@@ -275,6 +292,7 @@ class TestSuite():
         s7 = utils.cs(self.lm, "scheikundig element metsymbool He en", "page1144.text.p.1.s.1")
         self.assertCorrection("s7", attacher.correct(s7), "met symbool")
     
+    @register()
     def test_replace(self):
         pass
         
