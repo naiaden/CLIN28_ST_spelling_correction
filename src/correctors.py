@@ -1,10 +1,13 @@
 import string
 import copy
 import utils
+import Levenshtein
+import unidecode
 
 class Corrector:
     def __init__(self, lm):
         self.lm = lm
+
 
     def update(self, fivegram):
         self.patterns = utils.patterns(fivegram)
@@ -33,12 +36,37 @@ class Corrector:
 
 class Replacer(Corrector):
     def __init__(self, lm):
+#        """
+#        This function tries to find a replaceable in the window 'a b c d e' for word 'c'.
+#        It creates a correction with the superclass 'replace', and more specific classes
+#        such as 'capitalizationerror', 'redundantpunctuation', 'nonworderror' and the wildcard
+#        'replace'. It implicitely also finds archaic and confuseables, but there are shared
+#        under the class 'replace'.
+#        
+#        It follows a backoff strategy, where it starts with window size 5, 2 on the left, 2 on 
+#        the right. If there is not a word 'c'' with a higher frequency, then it backs off to 
+#        a 3 word window. Analoguously it finally also tries if a word without context might be
+#        a better fit if the word 'c' seems to be out-of-vocabulary.
+#        
+#        Returns a triple (r1, r2, r3) where
+#            r1 = a correction has been found,
+#            r2 = the 'new' window, with word 'c' being replaced,
+#            r3 = the correction.
+#            
+#        >>> wss = create_internal_sentence(create_sentence("Speer bij de processen van Neurenberg".split(), 'page1.text.div.5.p.2.s.1'))
+#        >>> for w in window(wss, 5):
+#                print(replaceables_window(w))
+#        (False, 'Speer bij de processen van', {'superclass': 'replace', 'class': 'capitalizationerror', 'span': ['page1.text.div.5.p.2.s.1.w.3'], 'text': 'de'})
+#        (True, 'bij de Processen van Neurenberg', {'superclass': 'replace', 'class': 'capitalizationerror', 'span': ['page1.text.div.5.p.2.s.1.w.4'], 'text': 'Processen'})
+#        """
         super().__init__(lm)
+        self.replace_threshold = 5
 
     def correct(self, fivegram):
         self.update(fivegram)
+        return self.correct_()
 
-    def is_year(number):
+    def is_year(self, number):
         """ 
         A simple function to test if the input (string or number) is a year (between 1750 and 2100). 
         """
@@ -48,7 +76,7 @@ class Replacer(Corrector):
         except (ValueError, TypeError):
             return False; 
 
-    def number_to_text(number):
+    def number_to_text(self, number):
         """ 
         No longer necessary for the shared task; this function converts an integer
         to its lexical string representation if this is according to the rules of OnzeTaal
@@ -73,6 +101,81 @@ class Replacer(Corrector):
         except TypeError:
             return number;
 
+    def correct_(self):
+        c = self.words[2]
+
+        best_s = self.word_string
+        best_f = self.lm.fr(best_s)
+        best_w = c
+
+        # Do not convert 2,5 into 25
+        if self.is_year(c) or utils.remove_punct(c).isdigit() or c in string.punctuation:
+            return (False, best_s, {})
+
+        local_threshold = self.replace_threshold
+
+        # 2-2 word context
+        for word in self.lm.all_words:
+            tsword = self.lm.ts(word)
+            if not word.unknown() and Levenshtein.distance(tsword, c) < 2:
+                a_b_X_d_e = " ".join(self.words[0:2] + [tsword] + self.words[3:5])
+                p_a_b_X_d_e, f_a_b_X_d_e = self.pf_from_cache(a_b_X_d_e)
+
+                if f_a_b_X_d_e*local_threshold > best_f:
+                    self.something_happened = True
+                    best_f = f_a_b_X_d_e
+                    best_s = a_b_X_d_e
+                    best_w = tsword
+                    print("nee")
+
+        
+
+        # 1-1 word context
+        if not self.something_happened:
+            best_f = self.lm.fr(" ".join(self.words[1:4]))
+            print(str(best_f) + "\t" + " ".join(self.words[1:4]))
+            for word in self.lm.all_words:
+                tsword = self.lm.ts(word)
+                if not word.unknown() and Levenshtein.distance(tsword, c) < 2:
+                    b_X_d = " ".join(self.words[1:2] + [tsword] + self.words[3:4])               
+                    p_b_X_d, f_b_X_d = self.pf_from_cache(b_X_d)
+                                   
+                    if f_b_X_d/local_threshold > best_f and self.lm.fr(" ".join(self.words[1:2] + [tsword] + self.words[3:5])) >= self.lm.fr(" ".join(self.words[1:5])):
+                        self.something_happened = True
+                        best_f = f_b_X_d
+                        best_s = b_X_d
+                        best_w = tsword
+            if self.something_happened:
+                best_s = self.words[0] + " " + best_s + " " + self.words[4]
+
+        # no context
+        if not self.something_happened and not self.lm.oc(self.patterns[2]):
+            for word in self.lm.all_words:
+                tsword = self.lm.ts(word)
+                if not word.unknown() and Levenshtein.distance(tsword, c) < 2:
+                    f = self.lm.fr(word);
+                    if f > best_f:
+                        self.something_happened = True
+                        best_f = f
+                        best_w = tsword
+            if self.something_happened:
+                best_s = " ".join(self.words[0:2] + [best_w] + self.words[3:5])
+        
+
+
+        correction = {}
+        correction['superclass'] = "replace"
+        if c.lower() == best_w.lower():
+            correction['class'] = "capitalizationerror"
+        elif utils.remove_punct(c) == utils.remove_punct(best_w) or unidecode.unidecode(c) == unidecode.unidecode(best_w):
+            correction['class'] = "redundantpunctuation"
+        elif not self.lm.oc(self.patterns[2]):
+            correction['class'] = "nonworderror"
+        else:
+            correction['class'] = "replace"
+        correction['span'] = [self.fivegram[2][0]]
+        correction['text'] = best_w
+        return (self.something_happened and best_s != " ".join(self.words), best_s, correction)
 
 
 # Find split errors
@@ -222,7 +325,7 @@ class Attacher(Corrector):
     def correct_(self):  
         middle = self.words[2]
 
-        best_s = self.lm.bp(self.word_string)
+        best_s = self.word_string
         best_candidate = middle
         best_f = self.lm.fr(self.patterns[2])
 
@@ -235,7 +338,7 @@ class Attacher(Corrector):
             if f_candidate > best_f  and not self.lm.bp(candidate[:x]).unknown() and not self.lm.bp(candidate[x:]).unknown():# and s_candidate.strip().split(" "):
                 self.something_happened = True
                 best_f = f_candidate
-                best_s = " ".join(self.words[0] + self.words[1] + candidate + self.words[3] + self.words[4])
+                best_s = " ".join(self.words[0:2] + [candidate] + self.words[3:5])
                 best_candidate = candidate
 
         correction = {'class': "runonerror", 'span': [self.fivegram[2][0]], 'text': best_candidate}
@@ -260,7 +363,11 @@ class Correctors:
         
         runon = self.attacher.correct(fivegram)
         print("\t\tRUNON\t" + str(runon[0]) + "\t" + runon[2]['text'])
-#        
+
+        replace = self.replacer.correct(fivegram)
+        #print("\t\REPLACE\t" + str(replace[0]) + "\t" + replace[2]['text'])
+        print(replace)
+        
 #        insert = self.inserter.correct(fivegram)
 #        print("\t\tINSERT\t" + str(insert[0]) + "\t" + insert[2]['text'])
 
@@ -272,105 +379,7 @@ class Correctors:
 
 
 
-#    def replaceables_window(ws):
-#        """
-#        This function tries to find a replaceable in the window 'a b c d e' for word 'c'.
-#        It creates a correction with the superclass 'replace', and more specific classes
-#        such as 'capitalizationerror', 'redundantpunctuation', 'nonworderror' and the wildcard
-#        'replace'. It implicitely also finds archaic and confuseables, but there are shared
-#        under the class 'replace'.
-#        
-#        It follows a backoff strategy, where it starts with window size 5, 2 on the left, 2 on 
-#        the right. If there is not a word 'c'' with a higher frequency, then it backs off to 
-#        a 3 word window. Analoguously it finally also tries if a word without context might be
-#        a better fit if the word 'c' seems to be out-of-vocabulary.
-#        
-#        Returns a triple (r1, r2, r3) where
-#            r1 = a correction has been found,
-#            r2 = the 'new' window, with word 'c' being replaced,
-#            r3 = the correction.
-#            
-#        >>> wss = create_internal_sentence(create_sentence("Speer bij de processen van Neurenberg".split(), 'page1.text.div.5.p.2.s.1'))
-#        >>> for w in window(wss, 5):
-#                print(replaceables_window(w))
-#        (False, 'Speer bij de processen van', {'superclass': 'replace', 'class': 'capitalizationerror', 'span': ['page1.text.div.5.p.2.s.1.w.3'], 'text': 'de'})
-#        (True, 'bij de Processen van Neurenberg', {'superclass': 'replace', 'class': 'capitalizationerror', 'span': ['page1.text.div.5.p.2.s.1.w.4'], 'text': 'Processen'})
-#        """
-#        words = [w[1] for w in ws]
-#
-#        something_happened = False
-#
-#        c = ws[2][1]
-#
-#        best_s = bp(" ".join(words))
-#        best_f = fr(best_s)
-#        best_w = c
-#
-#        # Do not convert 2,5 into 25
-#        if is_year(c) or c.translate(punct_translator).isdigit() or c in string.punctuation:
-#            return (False, best_s, {})
-#
-#        local_threshold = replace_threshold
-#
-#        # 2-2 word context
-#        for word in all_words:
-#            if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
-#                a_b_X_d_e = " ".join(words[0:2] + [ts(word)] + words[3:5])
-#                p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
-#
-#                if f_a_b_X_d_e*local_threshold > best_f:
-#                    something_happened = True
-#                    best_f = f_a_b_X_d_e
-#                    best_s = a_b_X_d_e
-#                    best_w = ts(word)
-#                    print("nee")
-#
-#        
-#
-#        # 1-1 word context
-#        if not something_happened:
-#            best_f = fr(" ".join(words[1:4]))
-#            print(str(best_f) + "\t" + " ".join(words[1:4]))
-#            for word in all_words:
-#                if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
-#                    a_b_X_d_e = " ".join(words[1:2] + [ts(word)] + words[3:4])               
-#                    p_a_b_X_d_e, f_a_b_X_d_e = pf_from_cache(a_b_X_d_e)
-#                                   
-#                    if f_a_b_X_d_e/local_threshold > best_f and fr(" ".join(words[1:2] + [ts(word)] + words[3:5])) >= fr(" ".join(words[1:5])):
-#                        something_happened = True
-#                        best_f = f_a_b_X_d_e
-#                        best_s = a_b_X_d_e
-#                        best_w = ts(word)
-#            if something_happened:
-#                best_s = ws[0][1] + " " + best_s + " " + ws[4][1]
-#
-#        # no context
-#        if not something_happened and not model.occurrencecount(ws[2][2]):
-#            for word in all_words:
-#                if not word.unknown() and Levenshtein.distance(ts(word), c) < 2:
-#                    f = fr(word);
-#                    if f > best_f:
-#                        something_happened = True
-#                        best_f = f
-#                        best_w = ts(word)
-#            if something_happened:
-#                best_s = ws[0][1] + " " + ws[1][1] + " " + best_w + " " + ws[3][1] + " " + ws[4][1]
-#        
-#
-#
-#        correction = {}
-#        correction['superclass'] = "replace"
-#        if c.lower() == best_w.lower():
-#            correction['class'] = "capitalizationerror"
-#        elif c.translate(punct_translator) == best_w.translate(punct_translator) or unidecode.unidecode(c) == unidecode.unidecode(best_w):
-#            correction['class'] = "redundantpunctuation"
-#        elif not model.occurrencecount(ws[2][2]):
-#            correction['class'] = "nonworderror"
-#        else:
-#            correction['class'] = "replace"
-#        correction['span'] = [ws[2][0]]
-#        correction['text'] = best_w
-#        return (something_happened and best_s != " ".join(words), best_s, correction)
+
 #
 
 #

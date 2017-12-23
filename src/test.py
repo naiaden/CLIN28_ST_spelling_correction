@@ -143,6 +143,9 @@ class TestSuite():
         
         s13 = utils.cs(self.lm, "elkaar ontdekt . </s> </s>", "page1144.text.div.1.p.1.s.1")
         self.assertNoCorrection("s13", splitter.correct(s13))
+        
+        s14 = utils.cs(self.lm, "is een kleur loos edelgas", "page1144.text.p.1.s.2.w.4")
+        self.assertCorrection("s14", splitter.correct(s14), "kleurloos")
 
     def test_missing(self):
         s1 = utils.cs(self.lm, "meestal gesloten , volgen", "page1027.text.div.1.div.6.p.1")
@@ -182,27 +185,29 @@ class TestSuite():
         # als
     
     def test_runon(self):
+        attacher = correctors.Attacher(self.lm)
+    
         s1 = utils.cs(self.lm, "De boeken - meest papyrusrollen", "page1008.text.div.1.p.3.s.5.w.3")
-        #self.assertCorrection("s1", splitter.correct(s1), "- vooral")
+        #self.assertCorrection("s1", attacher.correct(s1), "- vooral")
         
         s2 = utils.cs(self.lm, "geest , etcetera ) .", "page1014.text.div.1.div.5.p.2.s.4.w.43")
-        # et cetera
+        self.assertCorrection("s2", attacher.correct(s2), "et cetera") 
         
         s3 = utils.cs(self.lm, "Poort Het Teylersmuseum ( het", "page1041.text.list.1.item.4.s.1.w.2")
-        # Teylers museum
+        self.assertCorrection("s3", attacher.correct(s3), "Teylers museum")
         
         s4 = utils.cs(self.lm, "orgeltabulatuur ) van twee grote", "page1310.text.div.1.p.2.s.2.w.26")
         # geen spatie na )
         # van
         
         s5 = utils.cs(self.lm, "Blasiikirche . Begin-1708 voerde Bach", "page1310.text.div.1.p.4.s.2.w.1")
-        # Begin 1708
+        self.assertCorrection("s5", attacher.correct(s5), "Begin 1708")
         
         s6 = utils.cs(self.lm, "naar deze vacant-geworden positie te", "page1310.text.div.1.div.2.p.5.s.3.w.46")
-        # vacant geworden
+        self.assertCorrection("s6", attacher.correct(s6), "vacant geworden")
         
-        s7 = utils.cs(self.lm, "is een kleur loos edelgas", "page1144.text.p.1.s.2.w.4")
-        #self.assertCorrection("s7", splitter.correct(s7), "kleurloos")
+        s7 = utils.cs(self.lm, "scheikundig element metsymbool He en", "page1144.text.p.1.s.1")
+        self.assertCorrection("s7", attacher.correct(s7), "met symbool")
     
     def test_replace(self):
         pass

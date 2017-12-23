@@ -98,3 +98,6 @@ def window(iterable, size=2):
         yield win
 
 punct_translator = str.maketrans('', '', string.punctuation)
+def remove_punct(s):
+    return s.translate(punct_translator)
+    
