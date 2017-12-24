@@ -114,11 +114,11 @@ def cout(message, tabs=0):
 #    caller1 = inspect.currentframe().f_back.f_code.co_filename
 #    print("[" + caller1 + ":" + caller + "]\t" + "\t"*tabs + message)
     stack = inspect.stack()
-    the_class = stack[1][0].f_locals["self"].__class__
+    the_class = str(stack[1][0].f_locals["self"].__class__)
     if len(the_class.split("'")) > 2:
         the_class = the_class.split("'")[1]
         if len(the_class.split(".")) > 1:
             the_class = the_class.split(".")[1]
     
     the_method = stack[1][0].f_code.co_name
-    print("{}.{}{}{}".format(str(the_class), the_method, "\t"*tabs, message))
+    print("{}.{}{}{}".format(the_class, the_method, "\t"*tabs, message))
