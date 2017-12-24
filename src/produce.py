@@ -77,24 +77,16 @@ class ProcessSuite:
     
 
     def process_sentence(self, sentence):
-        #print(sentence)
-
-        string_sentence = utils.word_string(sentence)
-        #wip_ssentence = copy.copy(sentence)
+    
         shadow_wip = copy.copy(sentence)
 
         change = True
-
-#        utils.cout("[" + str(self.sent_iter) + "] " + utils.word_string(shadow_wip), 1)
         while change:
-            #wip_ssentence = shadow_wip
             utils.cout("[" + str(self.sent_iter) + "] " + utils.word_string(shadow_wip), tabs=1)
             change = False
             for fivegram in utils.window(shadow_wip, size=5):
                 utils.cout(utils.word_string(fivegram), tabs=2)
                 
-#                corrections = self.application_cache.get(utils.fake_hash(fivegram), self.correctors.correct(fivegram))
-#                corrections = self.correctors.correct(fivegram)
                 if utils.fake_hash(fivegram) in self.application_cache:
                     utils.cout(">> from cache", tabs=3)
                     corrections = self.application_cache[utils.fake_hash(fivegram)]
