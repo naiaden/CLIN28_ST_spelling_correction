@@ -18,6 +18,8 @@ class ProcessSuite:
 
         self.correctors = Correctors(self.lm)
         self.applicator = Applicator(self.lm)
+        
+        self.application_cache = {}
 
     def open_file(self, input_file):
         self.file_corrections = []
@@ -72,18 +74,40 @@ class ProcessSuite:
         self.close_file()
 
                              
-
+    
 
     def process_sentence(self, sentence):
         #print(sentence)
 
         string_sentence = utils.word_string(sentence)
-        wip_ssentence = copy.copy(sentence)
+        #wip_ssentence = copy.copy(sentence)
+        shadow_wip = copy.copy(sentence)
 
-        print("[" + str(self.sent_iter) + "] " + utils.word_string(wip_ssentence))
-        for fivegram in utils.window(wip_ssentence, size=5):
-            corrections = self.correctors.correct(fivegram)
-            self.applicator.apply(wip_ssentence, corrections)
+        change = True
+
+#        utils.cout("[" + str(self.sent_iter) + "] " + utils.word_string(shadow_wip), 1)
+        while change:
+            #wip_ssentence = shadow_wip
+            utils.cout("[" + str(self.sent_iter) + "] " + utils.word_string(shadow_wip), tabs=1)
+            change = False
+            for fivegram in utils.window(shadow_wip, size=5):
+                utils.cout(utils.word_string(fivegram), tabs=2)
+                
+#                corrections = self.application_cache.get(utils.fake_hash(fivegram), self.correctors.correct(fivegram))
+#                corrections = self.correctors.correct(fivegram)
+                if utils.fake_hash(fivegram) in self.application_cache:
+                    utils.cout(">> from cache", tabs=3)
+                    corrections = self.application_cache[utils.fake_hash(fivegram)]
+                else:
+                    corrections = self.correctors.correct(fivegram)
+                    self.application_cache[utils.fake_hash(fivegram)] = corrections
+                (applied_corrections, shadow_wip) = self.applicator.apply(shadow_wip, corrections)
+                if applied_corrections:
+                    change = True
+                    break
+            
+
+        return shadow_wip
 
         # change
         # corrections

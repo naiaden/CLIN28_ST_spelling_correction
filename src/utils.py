@@ -60,6 +60,12 @@ def words(sentence):
 def patterns(sentence):
     return [x[2] for x in sentence]
 
+def ids(sentence):
+    return [x[0] for x in sentence]
+    
+def fake_hash(sentence):
+    return str(ids(sentence) + words(sentence))
+
 ######################
 ## Global functions on other stuff
 
@@ -104,5 +110,15 @@ def remove_punct(s):
 
 
 def cout(message, tabs=0):
-    caller = inspect.currentframe().f_back.f_code.co_name
-    print("[" + caller + "]\t" + "\t"*tabs + message)
+#    caller = inspect.currentframe().f_back.f_code.co_name
+#    caller1 = inspect.currentframe().f_back.f_code.co_filename
+#    print("[" + caller1 + ":" + caller + "]\t" + "\t"*tabs + message)
+    stack = inspect.stack()
+    the_class = stack[1][0].f_locals["self"].__class__
+    if len(the_class.split("'")) > 2:
+        the_class = the_class.split("'")[1]
+        if len(the_class.split(".")) > 1:
+            the_class = the_class.split(".")[1]
+    
+    the_method = stack[1][0].f_code.co_name
+    print("{}.{}{}{}".format(str(the_class), the_method, "\t"*tabs, message))

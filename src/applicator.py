@@ -6,9 +6,20 @@ class Applicator:
         self.lm = lm
 
     def apply(self, sentence, corrections):
+#        if corrections:
+#            print("-----")
+#            print(sentence)
+    
+        applied_corrections = False
+    
         for correction in corrections:
             utils.cout(str(correction), 2)
-            self.apply_on_corrections(correction, corrections, sentence)
+#            self.apply_on_corrections(correction[2], corrections, sentence)
+            sentence = self.apply_one(sentence, correction[2])
+            applied_corrections = True
+#            print(">>>>>")
+#            print(sentence)
+        return (applied_corrections, sentence)
 
     def apply_one(self, sentence, correction):
         """
@@ -18,25 +29,36 @@ class Applicator:
         """
         print("AIS\t" + str(correction))
         if correction['class'] == "runonerror":
-            for iter,id in enumerate(sentence):
-                if id[0] == correction['span'][0]:
-                    id[1] = correction['text'].split(" ")[0]
+            
+#            print()
+#            print(sentence)
+            
+            for iter,item in enumerate(sentence):
+                if item[0] == correction['span'][0]:
+                    item[1] = correction['text'].split(" ")[0]
                     #print(id[1] + " " + str(iter))
-                    id[2] = self.lm.bp(correction['text'].split(" ")[0], allowunknown=False, autoaddunknown=True)
+                    item[2] = self.lm.bp(correction['text'].split(" ")[0], allowunknown=False, autoaddunknown=True)
                     break
-            new_entry = [id[0] + "R",
+            
+#            print(item)
+            
+            new_entry = [item[0] + "R",
                          correction['text'].split(" ")[1],
                          self.lm.bp(correction['text'].split(" ")[1], allowunknown=False, autoaddunknown=True),
-                         item['space'],
-                         item['in']]
+                         item[3],
+                         item[4]]
+            item[3] = True
             sentence.insert(iter+1, new_entry)
-        if correction.get('superclass', "") == "replace":
+            
+#            print(sentence)
+#            print()
+        elif correction.get('superclass', "") == "replace":
             for iter,id in enumerate(sentence):
                 if id[0] == correction['span'][0]:
                     id[1] = correction['text']
                     id[2] = self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True)
                     break
-        if correction['class'] == "spliterror":
+        elif correction['class'] == "spliterror":
             for iter,id in enumerate(sentence):
                 if id[0] == correction['span'][0]:
                     id[1] = correction['text']
@@ -44,16 +66,17 @@ class Applicator:
                 if id[0] == correction['span'][1]:
                     break
             del sentence[iter]
-        if correction['class'] == "missingword":
-            for iter, id in enumerate(sentence):
-                if id[0] == correction['after']:
+        elif correction['class'] == "missingword":
+            for iter, item in enumerate(sentence):
+                if item[0] == correction['after']:
                     #print("MW:\t" + str(iter) + "\t" + str(id))
                     break
-            new_entry = [id[0] + "." + str(random.randint(1,100)) + "M",
+            new_entry = [item[0] + "." + str(random.randint(1,100)) + "M",
                          correction['text'],
                          self.lm.bp(correction['text'], allowunknown=False, autoaddunknown=True),
-                         item['space'],
-                         item['in']]
+                         item[3],
+                         item[4]]
+            item[3] = True
             sentence.insert(iter+1, new_entry)
 
         return sentence

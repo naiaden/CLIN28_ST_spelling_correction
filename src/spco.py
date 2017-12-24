@@ -12,6 +12,9 @@ import random
 
 import sys
 
+import utils
+
+
 from lm import LanguageModel
 from test import TestSuite
 from produce import ProcessSuite
@@ -38,6 +41,7 @@ outputdir = args.outputdir
 #outputdir = '/home/louis/Programming/COCOCLINSPCO/data/output/'
 
 run_tests = True
+
 
 
 productionsuite = ProcessSuite(lm, outputdir)
