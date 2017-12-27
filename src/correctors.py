@@ -177,7 +177,7 @@ class Replacer(Corrector):
             correction['class'] = "replace"
         correction['span'] = [self.fivegram[2][0]]
         correction['text'] = best_w
-        return (self.something_happened and best_s != " ".join(self.words), best_s, correction)
+        return (self.something_happened and best_s != self.word_string, best_s, correction)
 
 
 # Find split errors
@@ -295,7 +295,7 @@ class Inserter(Corrector):
                     best_w = tsword
             # backoff option?
         correction = {'class': "missingword", 'after': self.fivegram[2][0], 'text': best_w}
-        return (self.something_happened and best_s != joinwords, best_s, correction)
+        return (self.something_happened and best_s != self.word_string, best_s, correction)
 
 
 

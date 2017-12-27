@@ -20,10 +20,11 @@ class ProcessSuite:
         self.applicator = Applicator(self.lm)
         
         self.application_cache = {}
-
+        
     def open_file(self, input_file):
         self.file_corrections = []
         self.file_words = []
+        self.output_file = input_file.split("/")[-1]
 
         
         with open(input_file, 'r') as f:
@@ -33,7 +34,9 @@ class ProcessSuite:
         return input_json
 
     def close_file(self):
-        with open(self.output_dir + 'asdasd.json', 'w') as f:
+        utils.cout({'corrections': self.file_corrections,
+                       'words': self.file_words})
+        with open(self.output_dir + '/aaa' + self.output_file + '.json', 'w') as f:
             json.dump({'corrections': self.file_corrections,
                        'words': self.file_words}, f)
 
@@ -79,6 +82,7 @@ class ProcessSuite:
     def process_sentence(self, sentence):
     
         shadow_wip = copy.copy(sentence)
+        sentence_corrections = []
 
         change = True
         while change:
@@ -93,12 +97,14 @@ class ProcessSuite:
                 else:
                     corrections = self.correctors.correct(fivegram)
                     self.application_cache[utils.fake_hash(fivegram)] = corrections
-                (applied_corrections, shadow_wip) = self.applicator.apply(shadow_wip, corrections)
+                (applied_corrections, shadow_wip, shadow_corrections) = self.applicator.apply(shadow_wip, corrections)
+                #sentence_corrections += shadow_corrections
+                sentence_corrections += [row[2] for row in shadow_corrections]
                 if applied_corrections:
                     change = True
                     break
             
-
+        self.file_corrections += sentence_corrections
         return shadow_wip
 
         # change

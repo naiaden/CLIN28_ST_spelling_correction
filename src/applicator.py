@@ -1,5 +1,6 @@
 import random
 import utils
+import copy
 
 class Applicator:
     def __init__(self, lm):
@@ -10,17 +11,18 @@ class Applicator:
 #            print("-----")
 #            print(sentence)
     
-        applied_corrections = False
+        has_applied_corrections = False
+        applied_corrections = copy.copy(corrections)
     
         for correction in corrections:
             utils.cout(str(correction), 2)
-            (applied_correction_on_correction, sentence) = self.apply_on_corrections(correction[2], corrections, sentence)
-            if not applied_correction_on_correction:
+            (has_applied_correction_on_correction, sentence, applied_corrections) = self.apply_on_corrections(correction[2], applied_corrections, sentence)
+            if not has_applied_correction_on_correction:
                 sentence = self.apply_one(sentence, correction[2])
-            applied_corrections = True
+            has_applied_corrections = True
 #            print(">>>>>")
 #            print(sentence)
-        return (applied_corrections, sentence)
+        return (has_applied_corrections, sentence, applied_corrections)
 
     def apply_one(self, sentence, correction):
         """
@@ -147,4 +149,4 @@ class Applicator:
                         break
                 if sentence[iter][0].endswith("M"):
                     del sentence[iter]
-        return (rv, sentence)
+        return (rv, sentence, corrections)

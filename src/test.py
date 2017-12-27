@@ -294,6 +294,83 @@ class TestSuite():
         s7 = utils.cs(self.lm, "scheikundig element metsymbool He en", "page1144.text.p.1.s.1")
         self.assertCorrection("s7", attacher.correct(s7), "met symbool")
     
+    # for a in $(grep -B 1 -A 5 "confusion" ../data/validation/page*.json | grep "page.\+.text.div..\+.p..\+.s..\+.w..\+\"$" | sed 's/.\+"\([^ ]\+\)"$/\1/g'); do grep -A 2 "\"$a\"$" ../data/validation/page*.json; grep -B 13 -A 16 "\"id\": \"$a\"" ~/Programming/COCOCLINSPCO/data/validation/page*.json; echo; done
+    @register()
+    def test_confusion(self):
+        replacer = correctors.Replacer(self.lm)
+    
+        s1 = utils.cs(self.lm, "in de 7e eeuw de", "page1008.text.div.1.p.3.s.4")
+        self.assertCorrection("s1", replacer.correct(s1), "zevende")
+        
+        s2 = utils.cs(self.lm, "in de 6e eeuw al", "page1008.text.div.1.p.3.s.7")
+        self.assertCorrection("s2", replacer.correct(s2), "zesde")
+                
+        s3 = utils.cs(self.lm, ") . Naar deze traditie", "page1014.text.div.1.div.2.p.2.s.1")
+        self.assertCorrection("s3", replacer.correct(s3), "Volgens")
+                
+        s4 = utils.cs(self.lm, "wel als beiden beschouwd worden", "page1014.text.div.2.p.6.s.3")
+        self.assertCorrection("s4", replacer.correct(s4), "beide")
+                
+        s5 = utils.cs(self.lm, "het niet compatible al zijn", "page1030.text.div.2.p.2.s.1")
+        self.assertCorrection("s5", replacer.correct(s5), "compatibel")
+                
+        s6 = utils.cs(self.lm, "vroeger behoorde bij het kasteel", "page1065.text.div.4.p.1.s.1")
+        self.assertCorrection("s6", replacer.correct(s6), "tot")
+                
+        s7 = utils.cs(self.lm, "van Tervuren dat men vroeger", "page1065.text.div.4.p.2.s.6")
+        self.assertCorrection("s7", replacer.correct(s7), "die")
+                
+        s8 = utils.cs(self.lm, "trouwens zijn enig gekend volkse", "page1065.text.div.4.p.3.s.7")
+        self.assertCorrection("s8", replacer.correct(s8), "enige")
+                
+        s9 = utils.cs(self.lm, "zijn enig gekend volkse tafereel", "page1065.text.div.4.p.3.s.7")
+        self.assertCorrection("s9", replacer.correct(s9), "gekende")
+                
+        s10 = utils.cs(self.lm, "zijn enige gekend volkse tafereel", "page1065.text.div.4.p.3.s.7")
+        self.assertCorrection("s10", replacer.correct(s10), "gekende")
+                
+        s11 = utils.cs(self.lm, "zijn meest productief jaar .", "page1065.text.div.4.p.4.s.1")
+        self.assertCorrection("s11", replacer.correct(s11), "productieve")
+                
+        s12 = utils.cs(self.lm, "Japang , die door Portugese", "page1290.text.div.1.p.2.s.9")
+        self.assertCorrection("s12", replacer.correct(s12), "dat")
+                
+        s13 = utils.cs(self.lm, "land is verdeelt in 47", "page1290.text.div.2.p.1.s.4")
+        self.assertCorrection("s13", replacer.correct(s13), "verdeeld")
+                
+        s14 = utils.cs(self.lm, "meeste Japanners hangt beiden geloven", "page1290.text.div.3.p.2.s.1")
+        self.assertCorrection("s14", replacer.correct(s14), "hangen")
+                
+        s15 = utils.cs(self.lm, "van een koele vochtig continentaal", "page1290.text.div.5.p.1.s.1")
+        self.assertCorrection("s15", replacer.correct(s15), "koel")
+                
+        s16 = utils.cs(self.lm, "de loop der vele jaren", "page1290.text.div.5.div.1.p.1.s.5")
+        self.assertCorrection("s16", replacer.correct(s16), "van ")
+                
+        s17 = utils.cs(self.lm, "het gesteente visceus , het", "page1290.text.div.5.div.1.p.2.s.3")
+        self.assertCorrection("s17", replacer.correct(s17), "viskeus")
+                
+        s18 = utils.cs(self.lm, "Japang , die door Portugese", "page1291.text.div.1.p.3.s.9.")
+        self.assertCorrection("s18", replacer.correct(s18), "dat")
+                
+        s19 = utils.cs(self.lm, ", de meesten zijn lokaal", "page1291.text.div.5.p.3.s.2")
+        self.assertCorrection("s19", replacer.correct(s19), "meeste")
+                
+        s20 = utils.cs(self.lm, "het centrale stadplein van Eisenach", "page1310.text.div.1.p.1.s.2")
+        self.assertCorrection("s20", replacer.correct(s10), "stadsplein")
+                
+        s21 = utils.cs(self.lm, "meer dan 100 musici )", "page1310.text.div.1.p.1.s.1.w.33")
+        self.assertCorrection("s21", replacer.correct(s21), "honderd")
+      
+        s22 = utils.cs(self.lm, "allengs groeiende ambities kreeg hij", "page1310.text.div.1.p.3.s.5")
+        self.assertCorrection("s22", replacer.correct(s22), "ambitie")
+                
+        s23 = utils.cs(self.lm, "het klavecimbel zelf vóór de", "page1310.text.div.1.div.2.p.3.s.3")
+        self.assertCorrection("s23", replacer.correct(s23), "zelfs")
+        
+        s24 = utils.cs(self.lm, "Bach schreef hij het overgrote", "page1310.text.div.1.div.3.p.1.s.2")
+        self.assertCorrection("s24", replacer.correct(s24), "hier")
+    
     @register()
     def test_replace(self):
         pass
