@@ -89,7 +89,7 @@ class ProcessSuite:
         change = True
         while change and sent_iterations < 10*len(sentence):
             sent_iterations += 1
-            utils.cout("[" + str(self.sent_iter) + "] " + utils.word_string(shadow_wip), tabs=1)
+            utils.cout("[" + str(self.sent_iter) + "/" + sent_iterations + "] " + utils.word_string(shadow_wip), tabs=1)
             change = False
             for fivegram in utils.window(shadow_wip, size=5):
                 utils.cout(utils.word_string(fivegram), tabs=2)
