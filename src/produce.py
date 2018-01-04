@@ -84,8 +84,11 @@ class ProcessSuite:
         shadow_wip = copy.copy(sentence)
         sentence_corrections = []
 
+
+        sent_iterations = 0
         change = True
-        while change:
+        while change and sent_iterations < 10*len(sentence):
+            sent_iterations += 1
             utils.cout("[" + str(self.sent_iter) + "] " + utils.word_string(shadow_wip), tabs=1)
             change = False
             for fivegram in utils.window(shadow_wip, size=5):
